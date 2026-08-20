@@ -1,0 +1,11 @@
+{
+  "name": "language-rosewind",
+  "version": "0.1.0",
+  "description": "RoseWind syntax, snippets, and runner integration for Atom",
+  "keywords": ["rosewind", "language", "grammar"],
+  "repository": "https://github.com/SahilKDas/RoseWind",
+  "license": "MIT",
+  "engines": { "atom": ">=1.40.0" },
+  "main": "./lib/main",
+  "activationCommands": { "atom-workspace": ["rosewind:run"] }
+}

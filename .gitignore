@@ -134,3 +134,8 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# Supplied Atom source is kept locally as a migration reference.
+/editor/atom-1.60.0/
+/editor/atom-1.60.0.zip
+/studio/.tools/

@@ -1,0 +1,61 @@
+<main>
+  <section class="hero">
+    <div class="hero__copy">
+      <p class="eyebrow"><span></span> A language that grows with you</p>
+      <h1>Strong types.<br><em>Gentle learning curve.</em></h1>
+      <p class="lead">RoseWind combines familiar curly-brace syntax with explicit, readable object-oriented mechanics. Learn with useful compiler messages, then ship to the web.</p>
+      <div class="hero__actions">
+        <a class="button button--primary" href="#start">Start coding</a>
+        <a class="button button--ghost" routerLink="/learn">Explore all 50 elements</a>
+      </div>
+      <dl class="hero__stats">
+        <div><dt>50</dt><dd>core elements</dd></div>
+        <div><dt>100%</dt><dd>browser runnable</dd></div>
+        <div><dt>0</dt><dd>setup to learn</dd></div>
+      </dl>
+    </div>
+    <div class="code-card" aria-label="RoseWind Pet class example">
+      <header><span class="dot dot--red"></span><span class="dot dot--gold"></span><span class="dot dot--green"></span><b>pet.rw</b><small>RoseWind</small></header>
+      <pre><code><span class="muted">// A class you can read on day one</span>
+<span class="pink">class</span> <span class="aqua">Pet</span> {{ '{' }}
+  <span class="pink">pub text</span> name;
+  <span class="pink">priv num</span> age;
+
+  <span class="yellow">create</span>(<span class="pink">text</span> name, <span class="pink">num</span> age) {{ '{' }}
+    <span class="orange">self</span>.name = name;
+    <span class="orange">self</span>.age = age;
+  {{ '}' }}
+
+  <span class="pink">pub</span> <span class="blue">speak</span>() <span class="pink">-&gt; void</span> {{ '{' }}
+    <span class="blue">print</span>(<span class="green">"Hi, I am "</span> + <span class="orange">self</span>.name);
+  {{ '}' }}
+{{ '}' }}
+
+<span class="pink">let</span> myDog: <span class="aqua">Pet</span> = <span class="pink">new</span> <span class="aqua">Pet</span>(<span class="green">"Buddy"</span>, <span class="purple">3</span>);</code></pre>
+      <footer><span>✓ Types checked</span><span>⌘ Enter to run</span></footer>
+    </div>
+  </section>
+
+  <section class="principles" aria-labelledby="principles-title">
+    <div class="section-heading"><p class="eyebrow">Designed for clarity</p><h2 id="principles-title">Serious foundations,<br>without the ceremony.</h2></div>
+    <div class="principle-grid">
+      <article><span class="icon">Aa</span><h3>Readable by default</h3><p>Explicit constructors, <code>self</code>, familiar punctuation, and a compact type vocabulary keep intent visible.</p></article>
+      <article><span class="icon">✓</span><h3>Helpful type safety</h3><p>Errors point to the source and explain the mismatch in beginner-friendly language before code runs.</p></article>
+      <article><span class="icon">⚡</span><h3>Built for the web</h3><p>Compile to modern JavaScript and work naturally with JSON, bytes, dates, IDs, fetch, and async delays.</p></article>
+    </div>
+  </section>
+
+  <section class="start" id="start">
+    <div>
+      <p class="eyebrow">Your workspace</p>
+      <h2>Ready when you are.</h2>
+      <p>Choose a display name. Your source stays in this browser and executes inside an isolated Web Worker.</p>
+    </div>
+    <form (ngSubmit)="enterStudio()">
+      <label for="displayName">Display name</label>
+      <div class="input-row"><input id="displayName" name="displayName" [(ngModel)]="name" autocomplete="nickname" placeholder="Ada" /><button class="button button--primary" type="submit">Open RoseWind Studio <span>→</span></button></div>
+      @if (loginError) { <p class="form-error" role="alert">{{ loginError }}</p> }
+      <small>No password or account is required for this local-first preview.</small>
+    </form>
+  </section>
+</main>

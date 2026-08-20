@@ -1,0 +1,9 @@
+<header class="site-header">
+  <a class="brand" routerLink="/" aria-label="RoseWind home"><span>R</span><b>RoseWind</b><small>language</small></a>
+  <nav aria-label="Primary navigation"><a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Overview</a><a routerLink="/learn" routerLinkActive="active">Language</a><a href="https://github.com/SahilKDas/RoseWind" rel="external">GitHub</a></nav>
+  <div class="account">
+    @if (auth.user()) { <a routerLink="/editor" class="studio-link">Studio</a><button (click)="logout()" title="Sign out">{{ auth.user()?.slice(0, 1)?.toUpperCase() }}</button> }
+    @else { <a routerLink="/" fragment="start" class="studio-link">Open Studio <span>?</span></a> }
+  </div>
+</header>
+<router-outlet />

@@ -1,0 +1,45 @@
+'fileTypes': [
+  'rw'
+  'rose'
+]
+'name': 'RoseWind'
+'patterns': [
+  { 'include': '#comments' }
+  { 'include': '#strings' }
+  { 'include': '#regex' }
+  { 'include': '#durations' }
+  { 'include': '#types' }
+  { 'include': '#keywords' }
+  { 'include': '#constants' }
+  { 'include': '#classes' }
+  { 'include': '#functions' }
+]
+'repository':
+  'comments':
+    'patterns': [
+      { 'name': 'comment.line.double-slash.rosewind', 'match': '//.*$' }
+      { 'name': 'comment.block.rosewind', 'begin': '/\\*', 'end': '\\*/' }
+    ]
+  'strings':
+    'patterns': [
+      { 'name': 'string.quoted.double.rosewind', 'begin': '"', 'end': '"', 'patterns': [{ 'name': 'constant.character.escape.rosewind', 'match': '\\\\.' }] }
+      { 'name': 'string.quoted.single.rosewind', 'begin': "'", 'end': "'", 'patterns': [{ 'name': 'constant.character.escape.rosewind', 'match': '\\\\.' }] }
+    ]
+  'regex':
+    'patterns': [{ 'name': 'string.regexp.rosewind', 'begin': 'r"', 'end': '"', 'patterns': [{ 'name': 'constant.character.escape.rosewind', 'match': '\\\\.' }] }]
+  'durations':
+    'patterns': [{ 'name': 'constant.numeric.duration.rosewind', 'match': '\\b\\d+(?:\\.\\d+)?(?:ms|s|m|h|d)\\b' }]
+  'types':
+    'patterns': [{ 'name': 'storage.type.rosewind', 'match': '\\b(?:text|num|bool|list|dict|void|any|date|time|bytes|decimal|id|set|regex)\\b' }]
+  'keywords':
+    'patterns': [{ 'name': 'keyword.control.rosewind', 'match': '\\b(?:class|create|extends|new|pub|priv|self|super|if|else|loop|in|return|break|continue|match|case|default|try|catch|let)\\b' }]
+  'constants':
+    'patterns': [
+      { 'name': 'constant.language.rosewind', 'match': '\\b(?:true|false|null)\\b' }
+      { 'name': 'constant.numeric.rosewind', 'match': '\\b\\d+(?:\\.\\d+)?\\b' }
+    ]
+  'classes':
+    'patterns': [{ 'name': 'entity.name.type.class.rosewind', 'match': '(?<=\\bclass\\s)[A-Za-z_][A-Za-z0-9_]*' }]
+  'functions':
+    'patterns': [{ 'name': 'entity.name.function.rosewind', 'match': '\\b[A-Za-z_][A-Za-z0-9_]*(?=\\s*\\()' }]
+'scopeName': 'source.rosewind'

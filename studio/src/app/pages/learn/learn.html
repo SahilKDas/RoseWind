@@ -1,0 +1,16 @@
+<main>
+  <header class="learn-hero"><p>Language reference / v0.1</p><h1>Fifty small pieces.<br><em>One coherent language.</em></h1><div><p>RoseWind keeps its core compact enough to learn, while covering the data, object, control-flow, and web primitives needed for real programs.</p><a routerLink="/" fragment="start">Try them in Studio →</a></div></header>
+  <nav class="category-nav" aria-label="Language element categories">@for (category of categories; track category) { <a [href]="'#' + category.replaceAll(' ', '-').replaceAll('&', 'and')">{{ category }}</a> }</nav>
+  <div class="reference">
+    @for (category of categories; track category) {
+      <section [id]="category.replaceAll(' ', '-').replaceAll('&', 'and')">
+        <header><span>{{ ($index + 1).toString().padStart(2, '0') }}</span><h2>{{ category }}</h2><small>{{ inCategory(category).length }} elements</small></header>
+        <div class="rows">
+          @for (item of inCategory(category); track item.number) {
+            <article><b>{{ item.number.toString().padStart(2, '0') }}</b><div><h3>{{ item.name }}</h3><p>{{ item.description }}</p></div><code>{{ item.syntax }}</code></article>
+          }
+        </div>
+      </section>
+    }
+  </div>
+</main>

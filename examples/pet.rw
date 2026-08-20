@@ -1,0 +1,17 @@
+// RoseWind: a modern type-safe language for beginners
+class Pet {
+    pub text name;
+    priv num age;
+
+    create(text name, num age) {
+        self.name = name;
+        self.age = age;
+    }
+
+    pub speak() -> void {
+        print("Hi, I am " + self.name + "!");
+    }
+}
+
+let myDog: Pet = new Pet("Buddy", 3);
+myDog.speak();
