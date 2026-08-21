@@ -25,13 +25,13 @@
           <button [class.selected]="fileName() === example.file" (click)="loadExample(example)"><img class="file-icon" src="/rosewind.svg" alt="" />{{ example.file }}<small>{{ example.name }}</small></button>
         }
       </div>
-      <section class="outline"><h3>Outline</h3><p>{{ result().program.declarations.length }} top-level declarations</p><p>{{ lineCount() }} lines</p><p>Ctrl Space for IntelliSense</p></section>
+      <section class="outline"><h3>Outline</h3><p>{{ result().program.declarations.length }} top-level declarations</p><p>{{ lineCount() }} lines</p><p>IntelliSense appears as you type</p></section>
     </aside>
 
     <section class="editor-area">
       <nav class="tabs">
-        <button [class.active]="activeView() === 'source'" (click)="activeView.set('source')"><img src="/rosewind.svg" alt="" />{{ fileName() }}<i></i></button>
-        <button [class.active]="activeView() === 'javascript'" (click)="activeView.set('javascript')"><span class="js">JS</span>transpiled.js</button>
+        <button [class.active]="activeView() === 'source'" (click)="showView('source')"><img src="/rosewind.svg" alt="" />{{ fileName() }}<i></i></button>
+        <button [class.active]="activeView() === 'javascript'" (click)="showView('javascript')"><span class="js">JS</span>transpiled.js</button>
       </nav>
       <div class="breadcrumb"><span>rosewind-starter</span><b>&rsaquo;</b><span>src</span><b>&rsaquo;</b><span>{{ activeView() === 'source' ? fileName() : 'transpiled.js' }}</span></div>
 

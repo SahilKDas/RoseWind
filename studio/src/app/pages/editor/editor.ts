@@ -4,7 +4,7 @@ import { EditorState } from '@codemirror/state';
 import { EditorView, keymap } from '@codemirror/view';
 import { basicSetup } from 'codemirror';
 import {
-  AfterViewInit,
+  afterNextRender,
   Component,
   computed,
   ElementRef,
@@ -27,9 +27,10 @@ import { compile, CompileResult, executeInWorker } from '../../language/compiler
 const sourceStorageKey = 'rosewind.source';
 
 @Component({ selector: 'app-editor', templateUrl: './editor.html', styleUrl: './editor.scss' })
-export class Editor implements AfterViewInit, OnDestroy {
-  private readonly editorHost = viewChild.required<ElementRef<HTMLDivElement>>('editorHost');
+export class Editor implements OnDestroy {
+  private readonly editorHost = viewChild<ElementRef<HTMLDivElement>>('editorHost');
   private editor?: EditorView;
+  private resizeObserver?: ResizeObserver;
 
   protected readonly auth = inject(AuthService);
   protected readonly examples = examples;
@@ -46,15 +47,18 @@ export class Editor implements AfterViewInit, OnDestroy {
 
   constructor() {
     inject(Title).setTitle('RoseWind Studio');
-    if (this.auth.isBrowser()) {
-      const saved = localStorage.getItem(sourceStorageKey);
+    if (this.auth.isBrowser() && typeof globalThis.localStorage !== 'undefined') {
+      const saved = globalThis.localStorage.getItem(sourceStorageKey);
       if (saved) this.updateSource(saved);
     }
+    afterNextRender(() => this.mountEditor());
   }
 
-  ngAfterViewInit(): void {
+  private mountEditor(): void {
+    const host = this.editorHost()?.nativeElement;
+    if (!host || this.editor) return;
     this.editor = new EditorView({
-      parent: this.editorHost().nativeElement,
+      parent: host,
       state: EditorState.create({
         doc: this.source(),
         extensions: [
@@ -63,7 +67,12 @@ export class Editor implements AfterViewInit, OnDestroy {
           roseWindLanguage,
           roseWindHighlighting,
           roseWindDiagnostics(),
-          autocompletion({ override: [roseWindCompletions], activateOnTyping: true }),
+          autocompletion({
+            override: [roseWindCompletions],
+            activateOnTyping: true,
+            activateOnTypingDelay: 60,
+            selectOnOpen: true,
+          }),
           keymap.of([
             { key: 'Mod-Enter', run: () => { void this.run(); return true; } },
             { key: 'Mod-s', run: () => { this.save(); return true; } },
@@ -92,9 +101,18 @@ export class Editor implements AfterViewInit, OnDestroy {
         ],
       }),
     });
+    if (typeof ResizeObserver !== 'undefined') {
+      this.resizeObserver = new ResizeObserver(() => this.editor?.requestMeasure());
+      this.resizeObserver.observe(host);
+    }
+    requestAnimationFrame(() => {
+      this.editor?.requestMeasure();
+      this.editor?.focus();
+    });
   }
 
   ngOnDestroy(): void {
+    this.resizeObserver?.disconnect();
     this.editor?.destroy();
   }
 
@@ -110,8 +128,15 @@ export class Editor implements AfterViewInit, OnDestroy {
     this.runtimeError.set(null);
   }
 
+  protected showView(view: 'source' | 'javascript'): void {
+    this.activeView.set(view);
+    if (view === 'source') requestAnimationFrame(() => this.editor?.requestMeasure());
+  }
+
   protected save(): void {
-    localStorage.setItem(sourceStorageKey, this.source());
+    if (typeof globalThis.localStorage !== 'undefined') {
+      globalThis.localStorage.setItem(sourceStorageKey, this.source());
+    }
     this.output.update((items) => [...items, `Saved ${this.fileName()} locally.`]);
   }
 

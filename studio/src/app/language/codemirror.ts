@@ -57,7 +57,7 @@ export const roseWindLanguage = StreamLanguage.define<RoseWindState>({
       if (keywords.has(value)) return 'keyword';
       if (types.has(value)) return 'typeName';
       if (constants.has(value)) return value === 'null' ? 'null' : 'bool';
-      if (stream.match(/(?=\s*\()/, false)) return 'function(variableName)';
+      if (stream.match(/(?=\s*\()/, false)) return 'variableName.function';
       if (stream.string.slice(0, stream.start).trimEnd().endsWith('.')) return 'propertyName';
       if (/^[A-Z]/.test(value)) return 'className';
       return 'variableName';
@@ -135,14 +135,14 @@ function discoveredCompletions(source: string): Completion[] {
 }
 
 export function roseWindCompletions(context: CompletionContext): CompletionResult | null {
-  const token = context.matchBefore(/[A-Za-z_][A-Za-z0-9_.]*/);
+  const token = context.matchBefore(/[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z0-9_]*)?/);
   if (!token || (token.from === token.to && !context.explicit)) return null;
   const typed = context.state.sliceDoc(token.from, token.to);
   const dot = typed.lastIndexOf('.');
   return {
     from: dot >= 0 ? token.from + dot + 1 : token.from,
     options: [...staticCompletions, ...discoveredCompletions(context.state.doc.toString())],
-    validFor: /^[A-Za-z_][A-Za-z0-9_]*$/,
+    validFor: /^(?:[A-Za-z_][A-Za-z0-9_]*)?$/,
   };
 }
 
