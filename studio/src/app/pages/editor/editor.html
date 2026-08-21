@@ -1,57 +1,62 @@
 <main class="studio">
   <header class="studio-bar">
-    <div class="traffic"><i></i><i></i><i></i></div>
-    <div class="workspace-title"><span>ROSEWIND</span><b>{{ fileName() }}</b><small>? {{ result().ok ? 'compiled' : 'needs attention' }}</small></div>
+    <div class="traffic" aria-hidden="true"><i></i><i></i><i></i></div>
+    <div class="workspace-title"><img src="/rosewind.svg" alt="" /><span>ROSEWIND</span><b>{{ fileName() }}</b><small>&mdash; {{ result().ok ? 'compiled' : 'needs attention' }}</small></div>
     <div class="studio-actions">
-      <label class="icon-button" title="Open .rw file"><input type="file" accept=".rw,text/plain" (change)="openFile($event)" />?</label>
-      <button class="icon-button" title="Save locally" (click)="save()">?</button>
-      <button class="run-button" (click)="run()" [disabled]="running()"><span>{{ running() ? '?' : '?' }}</span>{{ running() ? 'Running' : 'Run' }} <kbd>Ctrl ?</kbd></button>
+      <label class="icon-button" title="Open .rw file">
+        <input type="file" accept=".rw,text/plain" (change)="openFile($event)" />
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 14v5h14v-5"/></svg>
+      </label>
+      <button class="icon-button" title="Save locally" (click)="save()">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h12l2 2v14H5zM8 4v6h8V4M8 20v-6h8v6"/></svg>
+      </button>
+      <button class="run-button" (click)="run()" [disabled]="running()"><span>{{ running() ? '■' : '▶' }}</span>{{ running() ? 'Running' : 'Run' }} <kbd>Ctrl Enter</kbd></button>
     </div>
   </header>
 
   <div class="workbench">
-    <aside class="activity"><button class="active" title="Explorer">?</button><button title="Search">?</button><button title="Compiler">?</button><div></div><button title="Account">?</button></aside>
+    <aside class="activity" aria-label="Studio tools">
+      <button class="active" title="Explorer">E</button><button title="Search">S</button><button title="Compiler">C</button><div></div><button title="Account">A</button>
+    </aside>
     <aside class="explorer">
-      <header><span>Project</span><button title="Download current file" (click)="download()">?</button></header>
-      <div class="folder"><b><span>?</span> ROSEWIND STARTER</b>
+      <header><span>Project</span><button title="Download current file" (click)="download()">↓</button></header>
+      <div class="folder"><b><span>⌄</span> ROSEWIND STARTER</b>
         @for (example of examples; track example.file) {
-          <button [class.selected]="fileName() === example.file" (click)="loadExample(example)"><span class="file-icon">R</span>{{ example.file }}<small>{{ example.name }}</small></button>
+          <button [class.selected]="fileName() === example.file" (click)="loadExample(example)"><img class="file-icon" src="/rosewind.svg" alt="" />{{ example.file }}<small>{{ example.name }}</small></button>
         }
       </div>
-      <section class="outline"><h3>Outline</h3><p>{{ result().program.declarations.length }} top-level declarations</p><p>{{ lineCount() }} lines</p></section>
+      <section class="outline"><h3>Outline</h3><p>{{ result().program.declarations.length }} top-level declarations</p><p>{{ lineCount() }} lines</p><p>Ctrl Space for IntelliSense</p></section>
     </aside>
 
     <section class="editor-area">
       <nav class="tabs">
-        <button [class.active]="activeView() === 'source'" (click)="activeView.set('source')"><span>R</span>{{ fileName() }}<i></i></button>
+        <button [class.active]="activeView() === 'source'" (click)="activeView.set('source')"><img src="/rosewind.svg" alt="" />{{ fileName() }}<i></i></button>
         <button [class.active]="activeView() === 'javascript'" (click)="activeView.set('javascript')"><span class="js">JS</span>transpiled.js</button>
       </nav>
-      <div class="breadcrumb"><span>rosewind-starter</span><b>?</b><span>src</span><b>?</b><span>{{ activeView() === 'source' ? fileName() : 'transpiled.js' }}</span></div>
+      <div class="breadcrumb"><span>rosewind-starter</span><b>&rsaquo;</b><span>src</span><b>&rsaquo;</b><span>{{ activeView() === 'source' ? fileName() : 'transpiled.js' }}</span></div>
 
-      @if (activeView() === 'source') {
-        <div class="source-wrap">
-          <div class="gutter" aria-hidden="true">@for (_ of source().split('\n'); track $index) { <span>{{ $index + 1 }}</span> }</div>
-          <textarea #codeEditor spellcheck="false" aria-label="RoseWind source editor" [ngModel]="source()" (ngModelChange)="updateSource($event)" (keydown)="handleKeydown($event, codeEditor)" (keyup)="updateCursor(codeEditor)" (click)="updateCursor(codeEditor)"></textarea>
+      <div class="editor-stack">
+        <div class="source-wrap" [class.hidden]="activeView() !== 'source'">
+          <div #editorHost class="codemirror-host" aria-label="RoseWind source editor"></div>
         </div>
-      } @else {
-        <pre class="javascript"><code>{{ result().javascript || '// Fix compiler diagnostics to generate JavaScript.' }}</code></pre>
-      }
+        <pre class="javascript" [class.hidden]="activeView() !== 'javascript'"><code>{{ result().javascript || '// Fix compiler diagnostics to generate JavaScript.' }}</code></pre>
+      </div>
 
       <section class="bottom-panel">
-        <nav><button [class.active]="bottomPanel() === 'output'" (click)="bottomPanel.set('output')">Output</button><button [class.active]="bottomPanel() === 'diagnostics'" (click)="bottomPanel.set('diagnostics')">Problems <span>{{ result().diagnostics.length }}</span></button><i></i><button title="Clear output" (click)="output.set([])">?</button></nav>
+        <nav><button [class.active]="bottomPanel() === 'output'" (click)="bottomPanel.set('output')">Output</button><button [class.active]="bottomPanel() === 'diagnostics'" (click)="bottomPanel.set('diagnostics')">Problems <span>{{ result().diagnostics.length }}</span></button><i></i><button title="Clear output" (click)="output.set([])">&times;</button></nav>
         @if (bottomPanel() === 'output') {
           <div class="console" aria-live="polite">
-            @for (line of output(); track $index) { <p><span>?</span>{{ line }}</p> }
-            @if (runtimeError()) { <p class="error"><span>?</span>{{ runtimeError() }}</p> }
+            @for (line of output(); track $index) { <p><span>&rsaquo;</span>{{ line }}</p> }
+            @if (runtimeError()) { <p class="error"><span>&times;</span>{{ runtimeError() }}</p> }
           </div>
         } @else {
           <div class="problems">
-            @if (!result().diagnostics.length) { <p class="empty">? No problems found. RoseWind is ready to run.</p> }
-            @for (problem of result().diagnostics; track problem.code + problem.start) { <article><b>?</b><div><p>{{ problem.message }}</p><small>{{ fileName() }}:{{ problem.line }}:{{ problem.column }} ? {{ problem.code }}</small></div></article> }
+            @if (!result().diagnostics.length) { <p class="empty">&#10003; No problems found. RoseWind is ready to run.</p> }
+            @for (problem of result().diagnostics; track problem.code + problem.start) { <article><b>&times;</b><div><p>{{ problem.message }}</p><small>{{ fileName() }}:{{ problem.line }}:{{ problem.column }} &middot; {{ problem.code }}</small></div></article> }
           </div>
         }
       </section>
-      <footer class="statusbar"><span>main*</span><span>?</span><span class="spacer"></span><span>Ln {{ cursor().line }}, Col {{ cursor().column }}</span><span>Spaces: 4</span><span>UTF-8</span><span>{{ result().ok ? '? RoseWind' : '? RoseWind' }}</span></footer>
+      <footer class="statusbar"><span>main*</span><span>&#8635;</span><span class="spacer"></span><span>Ln {{ cursor().line }}, Col {{ cursor().column }}</span><span>Spaces: 4</span><span>UTF-8</span><span>{{ result().ok ? '✓ RoseWind' : '× RoseWind' }}</span></footer>
     </section>
   </div>
 </main>
