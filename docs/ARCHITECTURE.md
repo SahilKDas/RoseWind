@@ -36,8 +36,6 @@ The standard runtime provides `print`, `input`, `len`, `range`, casts, JSON help
 
 `decimal` parses a decimal string into a signed `BigInt` coefficient plus a scale. Addition, subtraction, multiplication, modulo, and comparisons align scales without floating-point conversion. Division produces a deterministic result with up to 18 fractional places.
 
-## Atom migration
+## Web-native editor
 
-Atom 1.60 is an Electron desktop application with legacy CoffeeScript/Etch packages, so its source is used as a behavior and layout reference rather than shipped to browsers. The Angular workbench preserves its useful model?activity bar, project tree, tabs, editor, output/problems, status bar, commands?behind web-native components.
-
-The separate Atom package keeps the original editor usable during migration and delegates execution to the shared compiler.
+The workbench is implemented entirely with Angular and CodeMirror. Project navigation, tabs, editing, IntelliSense, syntax highlighting, diagnostics, output, and commands run as browser-native components and use the shared RoseWind compiler directly.
