@@ -16,22 +16,22 @@
     </div>
     <div class="code-card" aria-label="RoseWind Pet class example">
       <header><span class="dot dot--red"></span><span class="dot dot--gold"></span><span class="dot dot--green"></span><b>pet.rw</b><small>RoseWind</small></header>
-      <pre><code><span class="muted">// A class you can read on day one</span>
-<span class="pink">class</span> <span class="aqua">Pet</span> {{ '{' }}
-  <span class="pink">pub text</span> name;
-  <span class="pink">priv num</span> age;
+      <pre><code><span class="muted">/* A whitespace-independent class */</span>
+<span class="pink">class</span>(<span class="aqua">Pet</span>) {{ '{' }}
+  <span class="pink">pub</span>(name:<span class="aqua">text</span>);
+  <span class="pink">priv</span>(age:<span class="aqua">num</span>);
 
-  <span class="yellow">create</span>(<span class="pink">text</span> name, <span class="pink">num</span> age) {{ '{' }}
+  <span class="yellow">create</span>(name:<span class="aqua">text</span>, age:<span class="aqua">num</span>) {{ '{' }}
     <span class="orange">self</span>.name = name;
     <span class="orange">self</span>.age = age;
   {{ '}' }}
 
-  <span class="pink">pub</span> <span class="blue">speak</span>() <span class="pink">-&gt; void</span> {{ '{' }}
+  <span class="pink">pub</span>(<span class="blue">speak</span>() <span class="pink">-&gt; void</span>) {{ '{' }}
     <span class="blue">print</span>(<span class="green">"Hi, I am "</span> + <span class="orange">self</span>.name);
   {{ '}' }}
 {{ '}' }}
 
-<span class="pink">let</span> myDog: <span class="aqua">Pet</span> = <span class="pink">new</span> <span class="aqua">Pet</span>(<span class="green">"Buddy"</span>, <span class="purple">3</span>);</code></pre>
+<span class="pink">let</span>(myDog:<span class="aqua">Pet</span> = <span class="pink">new</span>(<span class="aqua">Pet</span>, <span class="green">"Buddy"</span>, <span class="purple">3</span>));</code></pre>
       <footer><span>✓ Types checked</span><span>⌘ Enter to run</span></footer>
     </div>
   </section>

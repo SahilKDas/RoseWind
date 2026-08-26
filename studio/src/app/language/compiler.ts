@@ -4,6 +4,8 @@ import { Lexer } from './tokens';
 import { Parser } from './parser';
 import { Diagnostic } from './tokens';
 import { TypeChecker } from './type-checker';
+import { legacyGrammarDiagnostics, usesLegacyGrammar } from './migration';
+import { WhitespaceNormalizer } from './whitespace-normalizer';
 
 export interface CompileResult {
   readonly ok: boolean;
@@ -12,10 +14,23 @@ export interface CompileResult {
   readonly program: Program;
 }
 
-export function compile(source: string): CompileResult {
-  const lexed = new Lexer(source).scan();
+export interface CompileOptions {
+  readonly migrationHints?: boolean;
+}
+
+export function compile(source: string, options: CompileOptions = {}): CompileResult {
+  const normalized = new WhitespaceNormalizer().normalize(source);
+  const legacy = usesLegacyGrammar(source);
+  const lexed = legacy
+    ? new Lexer(source).scan()
+    : new Lexer(normalized.source, normalized).scan();
   const parsed = new Parser(lexed.tokens).parse();
-  const diagnostics = [...lexed.diagnostics, ...parsed.diagnostics];
+  const diagnostics = [
+    ...(options.migrationHints ? normalized.diagnostics : []),
+    ...(options.migrationHints && legacy ? legacyGrammarDiagnostics(source) : []),
+    ...lexed.diagnostics,
+    ...parsed.diagnostics,
+  ];
   if (!diagnostics.some((item) => item.severity === 'error')) {
     diagnostics.push(...new TypeChecker().check(parsed.program));
   }
@@ -23,7 +38,7 @@ export function compile(source: string): CompileResult {
   return {
     ok,
     javascript: ok ? new JavaScriptEmitter().emit(parsed.program) : '',
-    diagnostics: diagnostics.sort((left, right) => left.start - right.start),
+    diagnostics: diagnostics.sort((left, right) => (left.severity === right.severity ? 0 : left.severity === 'error' ? -1 : 1) || left.start - right.start),
     program: parsed.program,
   };
 }

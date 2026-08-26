@@ -58,7 +58,10 @@ export class Lexer {
   private line = 1;
   private column = 1;
 
-  constructor(private readonly source: string) {}
+  constructor(
+    private readonly source: string,
+    private readonly normalized?: import('./whitespace-normalizer').NormalizedSource,
+  ) {}
 
   scan(): { tokens: readonly Token[]; diagnostics: readonly Diagnostic[] } {
     while (!this.atEnd()) {
@@ -67,10 +70,8 @@ export class Lexer {
       const column = this.column;
       this.scanToken(start, line, column);
     }
-    this.tokens.push({
-      kind: 'eof', lexeme: '', start: this.current, end: this.current,
-      line: this.line, column: this.column,
-    });
+    const eofSpan = this.sourceSpan(this.current, this.current, this.line, this.column);
+    this.tokens.push({ kind: 'eof', lexeme: '', ...eofSpan });
     return { tokens: this.tokens, diagnostics: this.diagnostics };
   }
 
@@ -176,11 +177,25 @@ export class Lexer {
   }
 
   private add(kind: TokenKind, start: number, line: number, column: number, value?: Token['value']): void {
-    this.tokens.push({ kind, lexeme: this.source.slice(start, this.current), value, start, end: this.current, line, column });
+    this.tokens.push({ kind, lexeme: this.source.slice(start, this.current), value, ...this.sourceSpan(start, this.current, line, column) });
   }
 
   private report(code: string, message: string, start: number, line: number, column: number): void {
-    this.diagnostics.push({ severity: 'error', code, message, start, end: this.current, line, column });
+    this.diagnostics.push({ severity: 'error', code, message, ...this.sourceSpan(start, this.current, line, column) });
+  }
+
+  private sourceSpan(start: number, end: number, line: number, column: number): SourceSpan {
+    if (!this.normalized) return { start, end, line, column };
+    const offsets = this.normalized.offsets;
+    const originalStart = offsets[Math.min(start, offsets.length - 1)] ?? this.normalized.original.length;
+    const last = end > start ? offsets[Math.min(end - 1, offsets.length - 2)] ?? originalStart : originalStart - 1;
+    const originalEnd = end > start ? Math.min(this.normalized.original.length, last + 1) : originalStart;
+    let mappedLine = 1;
+    let lineStart = 0;
+    for (let index = 0; index < originalStart; index++) {
+      if (this.normalized.original[index] === '\n') { mappedLine++; lineStart = index + 1; }
+    }
+    return { start: originalStart, end: originalEnd, line: mappedLine, column: originalStart - lineStart + 1 };
   }
 
   private advance(): string {

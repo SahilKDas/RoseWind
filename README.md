@@ -1,6 +1,6 @@
 # RoseWind
 
-RoseWind is a beginner-friendly, strongly typed language designed for JIT-oriented JavaScript compilation and web targets. It combines familiar braces, parentheses, and semicolons with explicit object mechanics such as `self` and `create`.
+RoseWind is a beginner-friendly, strongly typed language designed for JIT-oriented JavaScript compilation and web targets. It combines familiar braces, parentheses, and semicolons with explicit object mechanics such as `self` and `create`. Its punctuation-first v0.2 grammar ignores whitespace outside literals and comments, while one compatibility release continues to accept v0.1 source.
 
 This repository contains:
 
@@ -39,6 +39,7 @@ npm run serve:ssr:studio
 ```
 
 The public overview and language reference use `RenderMode.Server`. The `/editor` route uses `RenderMode.Client`, keeping the interactive compiler out of bot-facing HTML and the initial public bundle.
+For production SSR, set `NG_ALLOWED_HOSTS` to the comma-separated public hostnames that may reach Angular (for example, `rosewind.example.com,www.rosewind.example.com`) and set `PUBLIC_ORIGIN` to the canonical origin used in `robots.txt` and `sitemap.xml`. Host validation remains enabled; local runs allow only `localhost` and `127.0.0.1` by default.
 
 ## Project map
 

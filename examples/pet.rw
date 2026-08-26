@@ -1,17 +1,17 @@
-// RoseWind: a modern type-safe language for beginners
-class Pet {
-    pub text name;
-    priv num age;
+/* RoseWind v0.2: whitespace is optional outside literals and comments. */
+class(Pet) {
+    pub(name:text);
+    priv(age:num);
 
-    create(text name, num age) {
+    create(name:text, age:num) {
         self.name = name;
         self.age = age;
     }
 
-    pub speak() -> void {
+    pub(speak()->void) {
         print("Hi, I am " + self.name + "!");
     }
 }
 
-let myDog: Pet = new Pet("Buddy", 3);
+let(myDog:Pet = new(Pet, "Buddy", 3));
 myDog.speak();

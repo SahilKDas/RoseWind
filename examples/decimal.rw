@@ -1,5 +1,5 @@
-let first: decimal = decimal("0.1");
-let second: decimal = decimal("0.2");
-let total: decimal = first + second;
+let(first:decimal = decimal("0.1"));
+let(second:decimal = decimal("0.2"));
+let(total:decimal = first + second);
 
 print(str(total));

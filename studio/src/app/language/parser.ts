@@ -50,10 +50,12 @@ export class Parser {
   }
 
   private classDeclaration(start: Token): ClassDeclaration {
+    const punctuationFirst = this.match('(');
     const name = this.consume('identifier', 'RW2001', 'Expected a class name.');
-    const parent = this.match('extends')
-      ? this.consume('identifier', 'RW2002', 'Expected a parent class name.').lexeme
-      : undefined;
+    const parent = punctuationFirst
+      ? (this.match(':') ? this.consume('identifier', 'RW2002', 'Expected a parent class name.').lexeme : undefined)
+      : (this.match('extends') ? this.consume('identifier', 'RW2002', 'Expected a parent class name.').lexeme : undefined);
+    if (punctuationFirst) this.consume(')', 'RW2102', 'Expected ")" after the class header.');
     this.consume('{', 'RW2003', 'Expected "{" before class members.');
     const members: ClassMember[] = [];
     while (!this.check('}') && !this.check('eof')) members.push(this.classMember());
@@ -72,6 +74,26 @@ export class Parser {
         parameters, returnType: this.syntheticType('void', start), body,
         ...this.span(start, this.previous()),
       } satisfies MethodDeclaration;
+    }
+
+    if (this.match('(')) {
+      const name = this.consume('identifier', 'RW2006', 'Expected a field or method name.');
+      if (this.check('(')) {
+        const parameters = this.parameters();
+        this.consume('->', 'RW2005', 'Expected "->" before the method return type.');
+        const returnType = this.type();
+        this.consume(')', 'RW2103', 'Expected ")" after the method signature.');
+        const body = this.block();
+        return {
+          kind: 'MethodDeclaration', access, name: name.lexeme, constructor: false,
+          parameters, returnType, body, ...this.span(start, this.previous()),
+        } satisfies MethodDeclaration;
+      }
+      this.consume(':', 'RW2104', 'Expected ":" between the field name and type.');
+      const fieldType = this.type();
+      this.consume(')', 'RW2105', 'Expected ")" after the field declaration.');
+      const end = this.consume(';', 'RW2007', 'Expected ";" after field declaration.');
+      return { kind: 'FieldDeclaration', access, name: name.lexeme, type: fieldType, ...this.span(start, end) } satisfies FieldDeclaration;
     }
 
     if (this.check('identifier') && this.peekNext().kind === '(') {
@@ -101,9 +123,17 @@ export class Parser {
     if (!this.check(')')) {
       do {
         const start = this.peek();
-        const parameterType = this.type();
-        const name = this.consume('identifier', 'RW2009', 'Expected a parameter name.');
-        parameters.push({ name: name.lexeme, type: parameterType, ...this.span(start, name) });
+        let name: Token;
+        let parameterType: TypeNode;
+        if (this.check('identifier') && this.peekNext().kind === ':') {
+          name = this.advance();
+          this.advance();
+          parameterType = this.type();
+        } else {
+          parameterType = this.type();
+          name = this.consume('identifier', 'RW2009', 'Expected a parameter name.');
+        }
+        parameters.push({ name: name.lexeme, type: parameterType, ...this.span(start, this.previous()) });
       } while (this.match(','));
     }
     this.consume(')', 'RW2010', 'Expected ")" after parameters.');
@@ -132,9 +162,11 @@ export class Parser {
   }
 
   private variableDeclaration(start: Token): VariableDeclaration {
+    const punctuationFirst = this.match('(');
     const name = this.consume('identifier', 'RW2013', 'Expected a variable name.');
     const declaredType = this.match(':') ? this.type() : undefined;
     const initializer = this.match('=') ? this.expression() : undefined;
+    if (punctuationFirst) this.consume(')', 'RW2106', 'Expected ")" after the variable declaration.');
     const end = this.consume(';', 'RW2014', 'Expected ";" after variable declaration.');
     if (!declaredType && !initializer) {
       this.error(name, 'RW2015', 'A variable needs a type or an initial value.');
@@ -193,11 +225,11 @@ export class Parser {
     let iterable: Expression | undefined;
     let condition: Expression | undefined;
     const parenthesized = this.match('(');
-    if (this.check('identifier') && this.peekNext().kind === 'in') {
+    if (this.check('identifier') && (this.peekNext().kind === 'in' || this.peekNext().kind === ':')) {
       variable = this.advance().lexeme;
       this.advance();
       iterable = this.expression();
-    } else if (!this.check('{')) {
+    } else if (!this.check('{') && !this.check(')')) {
       condition = this.expression();
     }
     if (parenthesized) this.consume(')', 'RW2021', 'Expected ")" after loop header.');
@@ -206,7 +238,9 @@ export class Parser {
   }
 
   private returnStatement(start: Token): ReturnStatement {
-    const value = this.check(';') ? undefined : this.expression();
+    const punctuationFirst = this.match('(');
+    const value = this.check(punctuationFirst ? ')' : ';') ? undefined : this.expression();
+    if (punctuationFirst) this.consume(')', 'RW2107', 'Expected ")" after the return value.');
     const end = this.consume(';', 'RW2022', 'Expected ";" after return value.');
     return { kind: 'ReturnStatement', value, ...this.span(start, end) };
   }
@@ -235,9 +269,15 @@ export class Parser {
     while (!this.check('}') && !this.check('eof')) {
       const caseStart = this.peek();
       let test: Expression | undefined;
-      if (this.match('case')) test = this.expression();
-      else this.consume('default', 'RW2030', 'Expected "case" or "default".');
-      this.consume('=>', 'RW2031', 'Expected "=>" after match case.');
+      let punctuationFirst = false;
+      if (this.match('case')) {
+        punctuationFirst = this.match('(');
+        test = this.expression();
+        if (punctuationFirst) this.consume(')', 'RW2108', 'Expected ")" after the case value.');
+      } else {
+        this.consume('default', 'RW2030', 'Expected "case" or "default".');
+      }
+      if (!punctuationFirst) this.match('=>');
       const body = this.block();
       cases.push({ test, body, ...this.span(caseStart, this.previous()) });
     }
@@ -316,6 +356,13 @@ export class Parser {
       return { kind: 'IdentifierExpression', name: token.lexeme, ...this.span(token, token) } satisfies IdentifierExpression;
     }
     if (token.kind === 'new') {
+      if (this.match('(')) {
+        const name = this.consume('identifier', 'RW2036', 'Expected a class name after "new(".');
+        const args: Expression[] = [];
+        if (this.match(',')) do { args.push(this.expression()); } while (this.match(','));
+        this.consume(')', 'RW2037', 'Expected ")" after the new expression.');
+        return { kind: 'NewExpression', className: name.lexeme, arguments: args, ...this.span(token, this.previous()) } satisfies NewExpression;
+      }
       const name = this.consume('identifier', 'RW2036', 'Expected a class name after "new".');
       this.consume('(', 'RW2037', 'Expected "(" after class name.');
       const args = this.argumentsAfterOpen();

@@ -1,6 +1,6 @@
 <main>
   <header class="learn-hero"><p>Language reference / v0.1</p><h1>Fifty small pieces.<br><em>One coherent language.</em></h1><div><p>RoseWind keeps its core compact enough to learn, while covering the data, object, control-flow, and web primitives needed for real programs.</p><a routerLink="/" fragment="start">Try them in Studio →</a></div></header>
-  <nav class="category-nav" aria-label="Language element categories">@for (category of categories; track category) { <a [href]="'#' + category.replaceAll(' ', '-').replaceAll('&', 'and')">{{ category }}</a> }</nav>
+  <nav class="category-nav" aria-label="Language element categories">@for (category of categories; track category) { <a [href]="'#' + category.replaceAll(' ', '-').replaceAll('&', 'and')">{{ category }}</a> }<a href="#diagnostics">Errors & fixes</a></nav>
   <div class="reference">
     @for (category of categories; track category) {
       <section [id]="category.replaceAll(' ', '-').replaceAll('&', 'and')">
@@ -13,4 +13,11 @@
       </section>
     }
   </div>
-</main>
+  <section id="diagnostics" class="diagnostic-reference">
+    <header><p>Teaching diagnostics</p><h2>Errors that explain themselves.</h2><span>Stable RW codes connect compiler feedback to practical repairs.</span></header>
+    <div class="diagnostic-grid">
+      @for (item of diagnostics; track item.code) {
+        <article [id]="'diagnostics-' + item.code.toLowerCase()"><code>{{ item.code }}</code><div><h3>{{ item.title }}</h3><p>{{ item.explanation }}</p><small><b>Try this:</b> {{ item.repair }}</small></div></article>
+      }
+    </div>
+  </section></main>

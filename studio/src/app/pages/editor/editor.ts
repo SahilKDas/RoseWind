@@ -17,26 +17,45 @@ import { Title } from '@angular/platform-browser';
 import { AuthService } from '../../core/auth.service';
 import { CodeExample, examples } from '../../content/examples';
 import {
+  formatRoseWindDocument,
+  formatRoseWindSelection,
+  minifyRoseWindDocument,
+  goToRoseWindDefinition,
   roseWindCompletions,
+  roseWindDefinitionNavigation,
   roseWindDiagnostics,
   roseWindHighlighting,
+  roseWindHover,
   roseWindLanguage,
 } from '../../language/codemirror';
-import { compile, CompileResult, executeInWorker } from '../../language/compiler';
+import { executeInWorker } from '../../language/compiler';
+import {
+  CodeAction,
+  DocumentSymbol,
+  LanguageAnalysis,
+  LanguageDiagnostic,
+  roseWindLanguageService,
+  TextRange,
+} from '../../language/language-service';
 
 const sourceStorageKey = 'rosewind.source';
+const formatStorageKey = 'rosewind.formatOnSave';
 
 @Component({ selector: 'app-editor', templateUrl: './editor.html', styleUrl: './editor.scss' })
 export class Editor implements OnDestroy {
   private readonly editorHost = viewChild<ElementRef<HTMLDivElement>>('editorHost');
+  private readonly languageService = roseWindLanguageService;
   private editor?: EditorView;
   private resizeObserver?: ResizeObserver;
 
   protected readonly auth = inject(AuthService);
   protected readonly examples = examples;
   protected readonly source = signal(examples[0]!.source);
-  protected readonly result = signal<CompileResult>(compile(examples[0]!.source));
-  protected readonly output = signal<readonly string[]>(['RoseWind Studio ready. Press Ctrl+Enter to run.']);
+  protected readonly analysis = signal<LanguageAnalysis>(this.languageService.analyze(examples[0]!.source));
+  protected readonly result = computed(() => this.analysis().result);
+  protected readonly diagnostics = computed(() => this.analysis().diagnostics);
+  protected readonly symbols = computed(() => this.analysis().symbols);
+  protected readonly output = signal<readonly string[]>(['RoseWind Studio ready. Hover code for help, or press Ctrl+Enter to run.']);
   protected readonly runtimeError = signal<string | null>(null);
   protected readonly running = signal(false);
   protected readonly activeView = signal<'source' | 'javascript'>('source');
@@ -44,13 +63,24 @@ export class Editor implements OnDestroy {
   protected readonly cursor = signal({ line: 1, column: 1 });
   protected readonly lineCount = computed(() => this.source().split('\n').length);
   protected readonly fileName = signal('pet.rw');
+  protected readonly selectedDiagnostic = signal<LanguageDiagnostic | null>(null);
+  protected readonly pendingAction = signal<CodeAction | null>(null);
+  protected readonly formatOnSave = signal(false);
+  protected readonly fixPreview = computed(() => {
+    const action = this.pendingAction();
+    if (!action) return null;
+    return action.edits.map((edit) => ({
+      before: this.source().slice(edit.from, edit.to) || '∅',
+      after: edit.insert || '∅',
+      line: this.lineAt(edit.from),
+    }));
+  });
 
   constructor() {
     inject(Title).setTitle('RoseWind Studio');
-    if (this.auth.isBrowser() && typeof globalThis.localStorage !== 'undefined') {
-      const saved = globalThis.localStorage.getItem(sourceStorageKey);
-      if (saved) this.updateSource(saved);
-    }
+    const saved = this.readStorage(sourceStorageKey);
+    if (saved) this.updateSource(saved);
+    this.formatOnSave.set(this.readStorage(formatStorageKey) === 'true');
     afterNextRender(() => this.mountEditor());
   }
 
@@ -67,6 +97,8 @@ export class Editor implements OnDestroy {
           roseWindLanguage,
           roseWindHighlighting,
           roseWindDiagnostics(),
+          roseWindHover(),
+          roseWindDefinitionNavigation(),
           autocompletion({
             override: [roseWindCompletions],
             activateOnTyping: true,
@@ -76,8 +108,16 @@ export class Editor implements OnDestroy {
           keymap.of([
             { key: 'Mod-Enter', run: () => { void this.run(); return true; } },
             { key: 'Mod-s', run: () => { this.save(); return true; } },
+            { key: 'F12', run: goToRoseWindDefinition },
+            { key: 'Shift-Alt-f', run: formatRoseWindDocument },
+            { key: 'Mod-k Mod-f', run: formatRoseWindSelection },
+            { key: 'Shift-Alt-m', run: minifyRoseWindDocument },
             indentWithTab,
           ]),
+          EditorView.contentAttributes.of({
+            'aria-label': 'RoseWind source editor',
+            title: 'Hover for help · Ctrl+click or F12 for definition · Shift+Alt+F to format',
+          }),
           EditorView.updateListener.of((update) => {
             if (update.docChanged) this.updateSource(update.state.doc.toString());
             if (update.docChanged || update.selectionSet) {
@@ -118,7 +158,12 @@ export class Editor implements OnDestroy {
 
   protected updateSource(value: string): void {
     this.source.set(value);
-    this.result.set(compile(value));
+    this.analysis.set(this.languageService.analyze(value));
+    const selected = this.selectedDiagnostic();
+    if (selected) {
+      this.selectedDiagnostic.set(this.diagnostics().find((item) => item.id === selected.id) ?? null);
+    }
+    this.pendingAction.set(null);
   }
 
   protected loadExample(example: CodeExample): void {
@@ -126,6 +171,7 @@ export class Editor implements OnDestroy {
     this.setEditorSource(example.source);
     this.output.set([`Opened ${example.file}`]);
     this.runtimeError.set(null);
+    this.selectedDiagnostic.set(null);
   }
 
   protected showView(view: 'source' | 'javascript'): void {
@@ -134,21 +180,69 @@ export class Editor implements OnDestroy {
   }
 
   protected save(): void {
-    if (typeof globalThis.localStorage !== 'undefined') {
-      globalThis.localStorage.setItem(sourceStorageKey, this.source());
-    }
-    this.output.update((items) => [...items, `Saved ${this.fileName()} locally.`]);
+    if (this.formatOnSave()) this.formatDocument();
+    this.writeStorage(sourceStorageKey, this.source());
+    this.output.update((items) => [...items, `Saved ${this.fileName()} locally${this.formatOnSave() ? ' and formatted it' : ''}.`]);
+  }
+
+  protected toggleFormatOnSave(): void {
+    this.formatOnSave.update((value) => !value);
+    this.writeStorage(formatStorageKey, String(this.formatOnSave()));
+  }
+
+  protected formatDocument(): void {
+    if (!this.editor) return;
+    formatRoseWindDocument(this.editor);
+    this.output.update((items) => [...items, 'Formatted the document.']);
+  }
+
+  protected formatSelection(): void {
+    if (!this.editor) return;
+    formatRoseWindSelection(this.editor);
+  }
+  protected minifyDocument(): void {
+    if (!this.editor) return;
+    minifyRoseWindDocument(this.editor);
+    this.output.update((items) => [...items, 'Minified RoseWind. Whitespace outside literals and comments was removed.']);
+  }
+
+  protected navigateToSymbol(symbol: DocumentSymbol): void {
+    this.navigateTo(symbol.selectionRange);
+  }
+
+  protected selectProblem(problem: LanguageDiagnostic): void {
+    this.selectedDiagnostic.set(problem);
+    this.pendingAction.set(null);
+    this.navigateTo({ from: problem.start, to: Math.max(problem.start + 1, problem.end) });
+  }
+
+  protected previewAction(action: CodeAction): void {
+    this.pendingAction.set(action);
+  }
+
+  protected applyPendingAction(): void {
+    const action = this.pendingAction();
+    if (!action) return;
+    this.applyEdits(action);
+    this.pendingAction.set(null);
+  }
+
+  protected cancelAction(): void {
+    this.pendingAction.set(null);
   }
 
   protected async run(): Promise<void> {
-    const result = compile(this.source());
-    this.result.set(result);
-    this.bottomPanel.set(result.ok ? 'output' : 'diagnostics');
-    if (!result.ok) return;
+    const analysis = this.languageService.analyze(this.source());
+    this.analysis.set(analysis);
+    this.bottomPanel.set(analysis.result.ok ? 'output' : 'diagnostics');
+    if (!analysis.result.ok) {
+      this.selectedDiagnostic.set(analysis.diagnostics[0] ?? null);
+      return;
+    }
     this.running.set(true);
     this.runtimeError.set(null);
     this.output.set([]);
-    const execution = await executeInWorker(result.javascript);
+    const execution = await executeInWorker(analysis.result.javascript);
     this.output.set(execution.output.length ? execution.output : ['Program finished with no output.']);
     this.runtimeError.set(execution.error ?? null);
     this.running.set(false);
@@ -176,6 +270,24 @@ export class Editor implements OnDestroy {
     input.value = '';
   }
 
+  private navigateTo(range: TextRange): void {
+    this.showView('source');
+    if (!this.editor) return;
+    this.editor.dispatch({
+      selection: { anchor: Math.min(range.from, this.editor.state.doc.length), head: Math.min(range.to, this.editor.state.doc.length) },
+      scrollIntoView: true,
+    });
+    this.editor.focus();
+  }
+
+  private applyEdits(action: CodeAction): void {
+    if (!this.editor) return;
+    const changes = [...action.edits].sort((left, right) => left.from - right.from)
+      .map((edit) => ({ from: edit.from, to: edit.to, insert: edit.insert }));
+    this.editor.dispatch({ changes, scrollIntoView: true });
+    this.editor.focus();
+  }
+
   private setEditorSource(value: string): void {
     if (!this.editor) {
       this.updateSource(value);
@@ -187,5 +299,21 @@ export class Editor implements OnDestroy {
       scrollIntoView: true,
     });
     this.editor.focus();
+  }
+
+  private lineAt(position: number): number {
+    return this.source().slice(0, position).split('\n').length;
+  }
+
+  private readStorage(key: string): string | null {
+    if (!this.auth.isBrowser()) return null;
+    try { return typeof globalThis.localStorage === 'undefined' ? null : globalThis.localStorage.getItem(key); }
+    catch { return null; }
+  }
+
+  private writeStorage(key: string, value: string): void {
+    if (!this.auth.isBrowser()) return;
+    try { globalThis.localStorage?.setItem(key, value); }
+    catch { /* Storage may be disabled without disabling the editor. */ }
   }
 }

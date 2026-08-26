@@ -18,7 +18,12 @@ export class Home {
 
   constructor() {
     inject(Title).setTitle('RoseWind — A friendly, strongly typed language for the web');
-    inject(Meta).updateTag({ name: 'description', content: 'Learn and run RoseWind, a beginner-friendly strongly typed language with classes, null safety, JIT-oriented JavaScript output, and web-first data types.' });
+    const meta = inject(Meta);
+    meta.updateTag({ name: 'description', content: 'Learn and run RoseWind, a beginner-friendly strongly typed language with classes, null safety, JIT-oriented JavaScript output, and web-first data types.' });
+    meta.updateTag({ name: 'robots', content: 'index, follow, max-image-preview:large, max-snippet:-1' });
+    meta.updateTag({ property: 'og:type', content: 'website' });
+    meta.updateTag({ property: 'og:title', content: 'RoseWind programming language' });
+    meta.updateTag({ property: 'og:description', content: 'Strong types, a gentle learning curve, and a whitespace-independent grammar built for the web.' });
   }
 
   protected enterStudio(): void {

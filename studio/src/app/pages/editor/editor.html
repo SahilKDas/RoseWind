@@ -1,13 +1,16 @@
-<main class="studio">
+<main class="studio teaching-studio">
   <header class="studio-bar">
     <div class="traffic" aria-hidden="true"><i></i><i></i><i></i></div>
     <div class="workspace-title"><img src="/rosewind.svg" alt="" /><span>ROSEWIND</span><b>{{ fileName() }}</b><small>&mdash; {{ result().ok ? 'compiled' : 'needs attention' }}</small></div>
     <div class="studio-actions">
+      <button class="text-button" title="Format document (Shift+Alt+F)" (click)="formatDocument()">Format</button>
+      <button class="text-button" title="Minify RoseWind (Shift+Alt+M)" (click)="minifyDocument()">Minify</button>
+      <button class="toggle-button" [class.active]="formatOnSave()" [attr.aria-pressed]="formatOnSave()" title="Toggle format on save" (click)="toggleFormatOnSave()"><i></i>On save</button>
       <label class="icon-button" title="Open .rw file">
         <input type="file" accept=".rw,text/plain" (change)="openFile($event)" />
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 14v5h14v-5"/></svg>
       </label>
-      <button class="icon-button" title="Save locally" (click)="save()">
+      <button class="icon-button" title="Save locally (Ctrl+S)" (click)="save()">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h12l2 2v14H5zM8 4v6h8V4M8 20v-6h8v6"/></svg>
       </button>
       <button class="run-button" (click)="run()" [disabled]="running()"><span>{{ running() ? '■' : '▶' }}</span>{{ running() ? 'Running' : 'Run' }} <kbd>Ctrl Enter</kbd></button>
@@ -25,7 +28,17 @@
           <button [class.selected]="fileName() === example.file" (click)="loadExample(example)"><img class="file-icon" src="/rosewind.svg" alt="" />{{ example.file }}<small>{{ example.name }}</small></button>
         }
       </div>
-      <section class="outline"><h3>Outline</h3><p>{{ result().program.declarations.length }} top-level declarations</p><p>{{ lineCount() }} lines</p><p>IntelliSense appears as you type</p></section>
+      <section class="outline">
+        <h3>Outline <span>{{ symbols().length }}</span></h3>
+        @if (!symbols().length) { <p>No symbols yet</p> }
+        @for (symbol of symbols(); track symbol.kind + symbol.name + symbol.selectionRange.from) {
+          <button class="outline-item" (click)="navigateToSymbol(symbol)"><span>{{ symbol.kind === 'class' ? 'C' : 'V' }}</span><b>{{ symbol.name }}</b><small>{{ symbol.kind }}</small></button>
+          @for (child of symbol.children; track child.kind + child.name + child.selectionRange.from) {
+            <button class="outline-item child" (click)="navigateToSymbol(child)"><span>{{ child.kind === 'field' ? 'F' : child.kind === 'constructor' ? 'C' : 'M' }}</span><b>{{ child.name }}</b><small>{{ child.visibility || child.kind }}</small></button>
+          }
+        }
+      </section>
+      <section class="editor-help"><b>Code help</b><p>Hover for explanations</p><p><kbd>F12</kbd> go to definition</p><p><kbd>Shift Alt F</kbd> format</p><p><kbd>Shift Alt M</kbd> minify</p></section>
     </aside>
 
     <section class="editor-area">
@@ -33,7 +46,7 @@
         <button [class.active]="activeView() === 'source'" (click)="showView('source')"><img src="/rosewind.svg" alt="" />{{ fileName() }}<i></i></button>
         <button [class.active]="activeView() === 'javascript'" (click)="showView('javascript')"><span class="js">JS</span>transpiled.js</button>
       </nav>
-      <div class="breadcrumb"><span>rosewind-starter</span><b>&rsaquo;</b><span>src</span><b>&rsaquo;</b><span>{{ activeView() === 'source' ? fileName() : 'transpiled.js' }}</span></div>
+      <div class="breadcrumb"><span>rosewind-starter</span><b>&rsaquo;</b><span>src</span><b>&rsaquo;</b><span>{{ activeView() === 'source' ? fileName() : 'transpiled.js' }}</span><i></i><small>Ctrl+click a name to open its definition</small></div>
 
       <div class="editor-stack">
         <div class="source-wrap" [class.hidden]="activeView() !== 'source'">
@@ -43,20 +56,53 @@
       </div>
 
       <section class="bottom-panel">
-        <nav><button [class.active]="bottomPanel() === 'output'" (click)="bottomPanel.set('output')">Output</button><button [class.active]="bottomPanel() === 'diagnostics'" (click)="bottomPanel.set('diagnostics')">Problems <span>{{ result().diagnostics.length }}</span></button><i></i><button title="Clear output" (click)="output.set([])">&times;</button></nav>
+        <nav><button [class.active]="bottomPanel() === 'output'" (click)="bottomPanel.set('output')">Output</button><button [class.active]="bottomPanel() === 'diagnostics'" (click)="bottomPanel.set('diagnostics')">Problems <span>{{ diagnostics().length }}</span></button><i></i><button title="Clear output" (click)="output.set([])">&times;</button></nav>
         @if (bottomPanel() === 'output') {
           <div class="console" aria-live="polite">
             @for (line of output(); track $index) { <p><span>&rsaquo;</span>{{ line }}</p> }
             @if (runtimeError()) { <p class="error"><span>&times;</span>{{ runtimeError() }}</p> }
           </div>
         } @else {
-          <div class="problems">
-            @if (!result().diagnostics.length) { <p class="empty">&#10003; No problems found. RoseWind is ready to run.</p> }
-            @for (problem of result().diagnostics; track problem.code + problem.start) { <article><b>&times;</b><div><p>{{ problem.message }}</p><small>{{ fileName() }}:{{ problem.line }}:{{ problem.column }} &middot; {{ problem.code }}</small></div></article> }
+          <div class="teaching-problems">
+            <div class="problem-list">
+              @if (!diagnostics().length) { <p class="empty">&#10003; No problems found. RoseWind is ready to run.</p> }
+              @for (problem of diagnostics(); track problem.id) {
+                <button class="problem-row" [class.selected]="selectedDiagnostic()?.id === problem.id" (click)="selectProblem(problem)">
+                  <b>&times;</b><span><strong>{{ problem.message }}</strong><small>{{ fileName() }}:{{ problem.line }}:{{ problem.column }} &middot; {{ problem.code }}</small></span>
+                  @if (problem.actions.length) { <i title="Quick fix available">&#128161;</i> }
+                </button>
+              }
+            </div>
+            @if (selectedDiagnostic(); as problem) {
+              <aside class="problem-explanation">
+                <header><span>Why?</span><a [href]="'/learn#' + problem.documentationKey.replace('.', '-')" target="_blank">{{ problem.documentationKey }} ↗</a></header>
+                <p>{{ problem.explanation }}</p>
+                @if (problem.likelyCause) { <small><b>Likely cause:</b> {{ problem.likelyCause }}</small> }
+                @if (problem.actual || problem.expected) {
+                  <div class="type-comparison">@if (problem.actual) { <span>Actual <code>{{ problem.actual }}</code></span> } @if (problem.expected) { <span>Expected <code>{{ problem.expected }}</code></span> }</div>
+                }
+                @for (action of problem.actions; track action.id) { <button class="fix-button" (click)="previewAction(action)">&#128161; Preview: {{ action.title }}</button> }
+              </aside>
+            } @else if (diagnostics().length) {
+              <aside class="problem-explanation placeholder"><p>Select a problem to see what it means and how to repair it.</p></aside>
+            }
           </div>
         }
       </section>
-      <footer class="statusbar"><span>main*</span><span>&#8635;</span><span class="spacer"></span><span>Ln {{ cursor().line }}, Col {{ cursor().column }}</span><span>Spaces: 4</span><span>UTF-8</span><span>{{ result().ok ? '✓ RoseWind' : '× RoseWind' }}</span></footer>
+      <footer class="statusbar"><span>main*</span><span>&#8635;</span><span class="spacer"></span><span>Ln {{ cursor().line }}, Col {{ cursor().column }}</span><span>Spaces: 4</span><span>UTF-8</span><span>{{ formatOnSave() ? 'Format on save' : 'Manual format' }}</span><span>{{ result().ok ? '✓ RoseWind' : '× RoseWind' }}</span></footer>
     </section>
   </div>
+
+  @if (pendingAction(); as action) {
+    <div class="fix-backdrop" (click)="cancelAction()">
+      <section class="fix-dialog" role="dialog" aria-modal="true" aria-labelledby="fix-title" (click)="$event.stopPropagation()">
+        <header><div><small>SAFE QUICK FIX</small><h2 id="fix-title">{{ action.title }}</h2></div><button (click)="cancelAction()" aria-label="Close preview">&times;</button></header>
+        <p>Review the exact text change before it is applied.</p>
+        @for (change of fixPreview(); track $index) {
+          <div class="diff"><small>Line {{ change.line }}</small><pre class="before">- {{ change.before }}</pre><pre class="after">+ {{ change.after }}</pre></div>
+        }
+        <footer><button (click)="cancelAction()">Cancel</button><button class="apply-fix" (click)="applyPendingAction()">Apply fix</button></footer>
+      </section>
+    </div>
+  }
 </main>

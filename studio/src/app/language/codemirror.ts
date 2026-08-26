@@ -5,10 +5,17 @@ import {
   snippetCompletion,
 } from '@codemirror/autocomplete';
 import { HighlightStyle, StreamLanguage, StringStream, syntaxHighlighting } from '@codemirror/language';
-import { Diagnostic as EditorDiagnostic, linter } from '@codemirror/lint';
+import { Diagnostic as EditorDiagnostic, lintGutter, linter } from '@codemirror/lint';
 import { Extension } from '@codemirror/state';
+import { Command, EditorView, hoverTooltip } from '@codemirror/view';
 import { tags } from '@lezer/highlight';
-import { compile } from './compiler';
+import {
+  CompletionSuggestion,
+  RoseWindLanguageService,
+  roseWindLanguageService,
+  TextEdit,
+  TextRange,
+} from './language-service';
 
 interface RoseWindState {
   blockComment: boolean;
@@ -67,7 +74,7 @@ export const roseWindLanguage = StreamLanguage.define<RoseWindState>({
     return null;
   },
   languageData: {
-    commentTokens: { line: '//', block: { open: '/*', close: '*/' } },
+    commentTokens: { block: { open: '/*', close: '*/' } },
     closeBrackets: { brackets: ['(', '[', '{', '"', "'"] },
     indentOnInput: /^\s*[}\]]$/,
   },
@@ -87,71 +94,174 @@ export const roseWindHighlighting = syntaxHighlighting(HighlightStyle.define([
   { tag: tags.comment, color: '#6f6965', fontStyle: 'italic' },
 ]));
 
-const staticCompletions: readonly Completion[] = [
-  ...['class', 'extends', 'new', 'pub', 'priv', 'self', 'super', 'if', 'else',
-    'loop', 'in', 'return', 'break', 'continue', 'match', 'case', 'default',
-    'try', 'catch', 'let', 'true', 'false', 'null'].map((label) => ({ label, type: 'keyword' })),
-  ...[...types].map((label) => ({ label, type: 'type', detail: 'RoseWind type' })),
-  ...[
-    ['print', 'print(value)', 'Write to the output panel'],
-    ['input', 'input(prompt)', 'Read interactive input'],
-    ['len', 'len(value)', 'Return collection or text length'],
-    ['range', 'range(start, end, step)', 'Generate a number sequence'],
-    ['str', 'str(value)', 'Convert a value to text'],
-    ['num', 'num(value)', 'Convert a value to a number'],
-    ['toJSON', 'toJSON(value)', 'Serialize a value as JSON'],
-    ['parseJSON', 'parseJSON(text)', 'Parse JSON text'],
-    ['wait', 'wait(duration)', 'Pause asynchronously'],
-    ['web.fetch', 'web.fetch(url)', 'Fetch a web resource'],
-    ['math.random', 'math.random()', 'Generate a random number'],
-    ['typeOf', 'typeOf(value)', 'Inspect a runtime type'],
-  ].map(([label, apply, info]) => ({ label, apply, info, type: 'function' })),
-  snippetCompletion('class ${name} {\n    pub text name;\n\n    create(text name) {\n        self.name = name;\n    }\n}', {
-    label: 'class…', detail: 'Create a class', type: 'snippet',
+const snippetCompletions: readonly Completion[] = [
+  snippetCompletion('class(${name}) {\n    pub(name:text);\n\n    create(name:text) {\n        self.name = name;\n    }\n}', {
+    label: 'class…', detail: 'Create a v0.2 class', type: 'snippet', boost: 10,
   }),
-  snippetCompletion('pub ${name}(${parameters}) -> ${void} {\n    ${// body}\n}', {
-    label: 'method…', detail: 'Create a typed method', type: 'snippet',
+  snippetCompletion('pub(${name}(${parameters})->${void}) {\n    /* body */\n}', {
+    label: 'method…', detail: 'Create a typed v0.2 method', type: 'snippet', boost: 10,
   }),
-  snippetCompletion('loop ${item} in ${range(0, 10)} {\n    ${// body}\n}', {
-    label: 'loop…', detail: 'Iterate over values', type: 'snippet',
+  snippetCompletion('loop(${item}:${range(0, 10)}) {\n    /* body */\n}', {
+    label: 'loop…', detail: 'Iterate over values', type: 'snippet', boost: 10,
   }),
-  snippetCompletion('match (${value}) {\n    case ${pattern} => {\n        ${// body}\n    }\n    default => {\n        ${// fallback}\n    }\n}', {
-    label: 'match…', detail: 'Match a value', type: 'snippet',
+  snippetCompletion('match(${value}) {\n    case(${pattern}) {\n        /* body */\n    }\n    default {\n        /* fallback */\n    }\n}', {
+    label: 'match…', detail: 'Match a value', type: 'snippet', boost: 10,
   }),
 ];
-
-function discoveredCompletions(source: string): Completion[] {
-  const found = new Map<string, Completion>();
-  for (const match of source.matchAll(/\bclass\s+([A-Za-z_][A-Za-z0-9_]*)/g)) {
-    found.set(match[1]!, { label: match[1]!, type: 'class', detail: 'Class in this file' });
-  }
-  for (const match of source.matchAll(/\b(?:pub|priv)\s+(?:[A-Za-z_][\w<>?, ]*)\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?=[;(])/g)) {
-    found.set(match[1]!, { label: match[1]!, type: 'property', detail: 'Class member' });
-  }
-  for (const match of source.matchAll(/\blet\s+([A-Za-z_][A-Za-z0-9_]*)/g)) {
-    found.set(match[1]!, { label: match[1]!, type: 'variable', detail: 'Variable in this file' });
-  }
-  return [...found.values()];
-}
 
 export function roseWindCompletions(context: CompletionContext): CompletionResult | null {
   const token = context.matchBefore(/[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z0-9_]*)?/);
   if (!token || (token.from === token.to && !context.explicit)) return null;
   const typed = context.state.sliceDoc(token.from, token.to);
   const dot = typed.lastIndexOf('.');
+  const from = dot >= 0 ? token.from + dot + 1 : token.from;
+  const suggestions = roseWindLanguageService.completions(context.state.doc.toString(), context.pos);
+  const options = suggestions.map(toCodeMirrorCompletion);
+  if (dot < 0) options.push(...snippetCompletions);
   return {
-    from: dot >= 0 ? token.from + dot + 1 : token.from,
-    options: [...staticCompletions, ...discoveredCompletions(context.state.doc.toString())],
+    from,
+    options,
     validFor: /^(?:[A-Za-z_][A-Za-z0-9_]*)?$/,
   };
 }
 
-export function roseWindDiagnostics(): Extension {
-  return linter((view): readonly EditorDiagnostic[] => compile(view.state.doc.toString()).diagnostics.map((item) => ({
-    from: Math.min(item.start, view.state.doc.length),
-    to: Math.max(Math.min(item.end, view.state.doc.length), Math.min(item.start + 1, view.state.doc.length)),
-    severity: item.severity,
-    message: `${item.code}: ${item.message}`,
-    source: 'RoseWind',
-  })), { delay: 180 });
+export function roseWindDiagnostics(service: RoseWindLanguageService = roseWindLanguageService): Extension {
+  return [
+    linter((view): readonly EditorDiagnostic[] => {
+      const source = view.state.doc.toString();
+      return service.analyze(source).diagnostics.map((item) => ({
+        from: Math.min(item.start, view.state.doc.length),
+        to: Math.max(Math.min(item.end, view.state.doc.length), Math.min(item.start + 1, view.state.doc.length)),
+        severity: item.severity,
+        message: `${item.code}: ${item.message}`,
+        source: 'RoseWind',
+        renderMessage: () => diagnosticMessage(item.message, item.explanation, item.expected, item.actual),
+        actions: item.actions.map((action) => ({
+          name: `💡 ${action.title}`,
+          apply: (activeView: EditorView) => applyTextEdits(activeView, action.edits),
+        })),
+      }));
+    }, { delay: 180 }),
+    lintGutter(),
+  ];
+}
+
+export function roseWindHover(service: RoseWindLanguageService = roseWindLanguageService): Extension {
+  return hoverTooltip((view, position) => {
+    const hover = service.hover(view.state.doc.toString(), position);
+    if (!hover) return null;
+    return {
+      pos: hover.range.from,
+      end: hover.range.to,
+      above: true,
+      create: () => {
+        const dom = document.createElement('div');
+        dom.className = 'rw-hover';
+        const header = document.createElement('div');
+        header.className = 'rw-hover-header';
+        const kind = document.createElement('span');
+        kind.textContent = hover.kind;
+        const title = document.createElement('strong');
+        title.textContent = hover.title;
+        header.append(kind, title);
+        const signature = document.createElement('code');
+        signature.textContent = hover.signature;
+        const description = document.createElement('p');
+        description.textContent = hover.description;
+        dom.append(header, signature, description);
+        return { dom };
+      },
+    };
+  }, { hoverTime: 180, hideOnChange: true });
+}
+
+export function roseWindDefinitionNavigation(service: RoseWindLanguageService = roseWindLanguageService): Extension {
+  return EditorView.domEventHandlers({
+    mousedown(event, view) {
+      if (event.button !== 0 || (!event.ctrlKey && !event.metaKey)) return false;
+      const position = view.posAtCoords({ x: event.clientX, y: event.clientY });
+      if (position === null || !navigateToDefinition(view, position, service)) return false;
+      event.preventDefault();
+      return true;
+    },
+  });
+}
+
+export const goToRoseWindDefinition: Command = (view) =>
+  navigateToDefinition(view, view.state.selection.main.head, roseWindLanguageService);
+
+export const formatRoseWindDocument: Command = (view) => {
+  const edits = roseWindLanguageService.format(view.state.doc.toString());
+  if (!edits.length) return true;
+  applyTextEdits(view, edits);
+  return true;
+};
+
+export const formatRoseWindSelection: Command = (view) => {
+  const selection = view.state.selection.main;
+  const range: TextRange | undefined = selection.empty ? undefined : { from: selection.from, to: selection.to };
+  const edits = roseWindLanguageService.format(view.state.doc.toString(), range);
+  if (!edits.length) return true;
+  applyTextEdits(view, edits);
+  return true;
+};
+export const minifyRoseWindDocument: Command = (view) => {
+  const edits = roseWindLanguageService.minify(view.state.doc.toString());
+  if (!edits.length) return true;
+  applyTextEdits(view, edits);
+  return true;
+};
+
+function toCodeMirrorCompletion(item: CompletionSuggestion): Completion {
+  return {
+    label: item.label,
+    type: completionType(item.kind),
+    detail: item.detail,
+    info: item.info,
+    apply: item.apply,
+    boost: item.boost,
+  };
+}
+
+function completionType(kind: CompletionSuggestion['kind']): string {
+  if (kind === 'builtin') return 'function';
+  if (kind === 'field' || kind === 'property') return 'property';
+  if (kind === 'method' || kind === 'constructor') return 'method';
+  if (kind === 'parameter') return 'variable';
+  return kind;
+}
+
+function navigateToDefinition(view: EditorView, position: number, service: RoseWindLanguageService): boolean {
+  const definition = service.definition(view.state.doc.toString(), position);
+  if (!definition) return false;
+  view.dispatch({
+    selection: { anchor: definition.selectionRange.from, head: definition.selectionRange.to },
+    scrollIntoView: true,
+  });
+  view.focus();
+  return true;
+}
+
+function applyTextEdits(view: EditorView, edits: readonly TextEdit[]): void {
+  const changes = [...edits]
+    .sort((left, right) => left.from - right.from)
+    .map((edit) => ({ from: edit.from, to: edit.to, insert: edit.insert }));
+  view.dispatch({ changes, scrollIntoView: true });
+  view.focus();
+}
+
+function diagnosticMessage(message: string, explanation: string, expected?: string, actual?: string): HTMLElement {
+  const dom = document.createElement('div');
+  dom.className = 'rw-diagnostic';
+  const summary = document.createElement('strong');
+  summary.textContent = message;
+  const detail = document.createElement('p');
+  detail.textContent = explanation;
+  dom.append(summary, detail);
+  if (expected || actual) {
+    const types = document.createElement('code');
+    types.textContent = `${actual ? `actual: ${actual}` : ''}${actual && expected ? ' · ' : ''}${expected ? `expected: ${expected}` : ''}`;
+    dom.append(types);
+  }
+  return dom;
 }

@@ -17,7 +17,8 @@ Client hydration uses event replay on server-rendered pages. The editor is lazy-
 
 ```text
 RoseWind source
-  -> Lexer (tokens, comments, literals, source spans)
+  -> WhitespaceNormalizer (literal-aware compaction, original offset map)
+  -> Lexer (tokens, comments, mapped source spans)
   -> Parser (typed AST, Pratt expressions)
   -> TypeChecker (scopes, classes, privacy, nullability, generics)
   -> JavaScriptEmitter (modern async JavaScript)
