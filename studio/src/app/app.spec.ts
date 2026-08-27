@@ -15,6 +15,6 @@ describe('App shell', () => {
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('.brand')?.textContent).toContain('RoseWind');
-    expect(compiled.querySelector('nav')?.textContent).toContain('Language');
+    expect(compiled.querySelector('nav')?.textContent).toContain('Learn');
   });
 });

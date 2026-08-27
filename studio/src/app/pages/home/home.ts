@@ -1,7 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Meta, Title } from '@angular/platform-browser';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 
 @Component({
@@ -13,17 +13,18 @@ import { AuthService } from '../../core/auth.service';
 export class Home {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  protected readonly readyLesson = inject(ActivatedRoute).snapshot.queryParamMap.get('lesson');
   protected name = '';
   protected loginError = '';
 
   constructor() {
-    inject(Title).setTitle('RoseWind — A friendly, strongly typed language for the web');
+    inject(Title).setTitle('RoseWind — Learn programming from your very first line');
     const meta = inject(Meta);
-    meta.updateTag({ name: 'description', content: 'Learn and run RoseWind, a beginner-friendly strongly typed language with classes, null safety, JIT-oriented JavaScript output, and web-first data types.' });
+    meta.updateTag({ name: 'description', content: 'Learn programming from scratch with RoseWind: six friendly lessons, plain-language errors, no setup, and a browser playground made for first-time coders.' });
     meta.updateTag({ name: 'robots', content: 'index, follow, max-image-preview:large, max-snippet:-1' });
     meta.updateTag({ property: 'og:type', content: 'website' });
     meta.updateTag({ property: 'og:title', content: 'RoseWind programming language' });
-    meta.updateTag({ property: 'og:description', content: 'Strong types, a gentle learning curve, and a whitespace-independent grammar built for the web.' });
+    meta.updateTag({ property: 'og:description', content: 'Start with one line, learn through tiny experiments, and build your own typed programs in the browser.' });
   }
 
   protected enterStudio(): void {

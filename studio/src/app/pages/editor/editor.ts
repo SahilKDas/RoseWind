@@ -40,6 +40,7 @@ import {
 
 const sourceStorageKey = 'rosewind.source';
 const formatStorageKey = 'rosewind.formatOnSave';
+const fileNameStorageKey = 'rosewind.fileName';
 
 @Component({ selector: 'app-editor', templateUrl: './editor.html', styleUrl: './editor.scss' })
 export class Editor implements OnDestroy {
@@ -55,14 +56,15 @@ export class Editor implements OnDestroy {
   protected readonly result = computed(() => this.analysis().result);
   protected readonly diagnostics = computed(() => this.analysis().diagnostics);
   protected readonly symbols = computed(() => this.analysis().symbols);
-  protected readonly output = signal<readonly string[]>(['RoseWind Studio ready. Hover code for help, or press Ctrl+Enter to run.']);
+  protected readonly output = signal<readonly string[]>(['Welcome! Press Run to make the computer follow your first two instructions.']);
   protected readonly runtimeError = signal<string | null>(null);
   protected readonly running = signal(false);
   protected readonly activeView = signal<'source' | 'javascript'>('source');
   protected readonly bottomPanel = signal<'output' | 'diagnostics'>('output');
   protected readonly cursor = signal({ line: 1, column: 1 });
   protected readonly lineCount = computed(() => this.source().split('\n').length);
-  protected readonly fileName = signal('pet.rw');
+  protected readonly fileName = signal(examples[0]!.file);
+  protected readonly currentExample = computed(() => examples.find((example) => example.file === this.fileName()));
   protected readonly selectedDiagnostic = signal<LanguageDiagnostic | null>(null);
   protected readonly pendingAction = signal<CodeAction | null>(null);
   protected readonly formatOnSave = signal(false);
@@ -79,7 +81,9 @@ export class Editor implements OnDestroy {
   constructor() {
     inject(Title).setTitle('RoseWind Studio');
     const saved = this.readStorage(sourceStorageKey);
+    const savedFileName = this.readStorage(fileNameStorageKey);
     if (saved) this.updateSource(saved);
+    if (savedFileName) this.fileName.set(savedFileName);
     this.formatOnSave.set(this.readStorage(formatStorageKey) === 'true');
     afterNextRender(() => this.mountEditor());
   }
@@ -182,6 +186,7 @@ export class Editor implements OnDestroy {
   protected save(): void {
     if (this.formatOnSave()) this.formatDocument();
     this.writeStorage(sourceStorageKey, this.source());
+    this.writeStorage(fileNameStorageKey, this.fileName());
     this.output.update((items) => [...items, `Saved ${this.fileName()} locally${this.formatOnSave() ? ' and formatted it' : ''}.`]);
   }
 

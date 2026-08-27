@@ -1,6 +1,79 @@
 <main>
-  <header class="learn-hero"><p>Language reference / v0.1</p><h1>Fifty small pieces.<br><em>One coherent language.</em></h1><div><p>RoseWind keeps its core compact enough to learn, while covering the data, object, control-flow, and web primitives needed for real programs.</p><a routerLink="/" fragment="start">Try them in Studio →</a></div></header>
-  <nav class="category-nav" aria-label="Language element categories">@for (category of categories; track category) { <a [href]="'#' + category.replaceAll(' ', '-').replaceAll('&', 'and')">{{ category }}</a> }<a href="#diagnostics">Errors & fixes</a></nav>
+  <header class="learn-hero">
+    <p>Start at zero / RoseWind v0.2</p>
+    <h1>Your first line.<br><em>Your own ideas.</em></h1>
+    <div>
+      <p>You do not need to know coding words yet. Six small lessons will take you from making the computer talk to building a tiny game and your own objects.</p>
+      <div class="hero-actions"><a class="primary-link" href="#start-here">Start lesson 1 →</a><a href="#reference">I need the reference</a></div>
+    </div>
+  </header>
+
+  <section class="promise" aria-labelledby="promise-title">
+    <div><p class="section-label">Before you begin</p><h2 id="promise-title">You already have everything you need.</h2></div>
+    <div class="promise-grid">
+      <article><b>01</b><h3>No setup</h3><p>RoseWind runs in this browser. There is nothing to install and no command line to learn.</p></article>
+      <article><b>02</b><h3>Mistakes are clues</h3><p>Errors explain what happened and offer safe fixes. Breaking a program is part of learning.</p></article>
+      <article><b>03</b><h3>Change one thing</h3><p>Run an example, predict what will happen, change one value, and run it again. That is real programming.</p></article>
+    </div>
+  </section>
+
+  <section id="start-here" class="course" aria-labelledby="course-title">
+    <header class="course-heading">
+      <div><p class="section-label">The zero-to-builder path</p><h2 id="course-title">Six lessons. About ten minutes each.</h2></div>
+      <p>Read the plain-English idea, run the code, then try the small challenge. You never have to memorize everything before moving on.</p>
+    </header>
+
+    <nav class="lesson-map" aria-label="Beginner lesson map">
+      @for (lesson of lessons; track lesson.number) {
+        <a [href]="'#lesson-' + lesson.number"><b>{{ lesson.number }}</b><span>{{ lesson.title }}</span></a>
+      }
+    </nav>
+
+    <div class="lesson-list">
+      @for (lesson of lessons; track lesson.number) {
+        <article class="lesson" [class.final-lesson]="lesson.number === lessons.length" [id]="'lesson-' + lesson.number">
+          <header>
+            <span>Lesson {{ lesson.number }} of {{ lessons.length }}</span>
+            @if (lesson.number === lessons.length) { <b>Final build</b> }
+            <h3>{{ lesson.title }}</h3>
+            <p>{{ lesson.idea }}</p>
+          </header>
+          <div class="lesson-workbench">
+            <div class="lesson-explanation">
+              <h4>What this means</h4>
+              <p>{{ lesson.explanation }}</p>
+              <div class="challenge"><span>Your experiment</span><p>{{ lesson.challenge }}</p></div>
+              <div class="lesson-actions">
+                <button class="try-button" (click)="tryLesson(lesson)">Try this in Studio <span>→</span></button>
+                <button class="copy-button" (click)="copyLesson(lesson)">{{ copiedLesson() === lesson.number ? 'Copied!' : 'Copy code' }}</button>
+              </div>
+            </div>
+            <div class="lesson-code">
+              <header><i></i><i></i><i></i><span>lesson-{{ lesson.number }}.rw</span></header>
+              <pre><code>{{ lesson.code }}</code></pre>
+              <footer><b>Output</b>@for (line of lesson.result; track $index) { <span>{{ line }}</span> }</footer>
+            </div>
+          </div>
+        </article>
+      }
+    </div>
+  </section>
+
+  <section class="graduation" aria-labelledby="graduation-title">
+    <div><p class="section-label">Your final check</p><h2 id="graduation-title">You are a programmer when you can experiment.</h2><p>There is no vocabulary quiz. Open the final build and make it yours.</p></div>
+    <ol>
+      <li><span>✓</span> Rename the hero.</li>
+      <li><span>✓</span> Change how many turns run.</li>
+      <li><span>✓</span> Predict the score before pressing Run.</li>
+      <li><span>✓</span> Add one message nobody told you to add.</li>
+    </ol>
+    <button class="graduate-button" (click)="tryLesson(lessons[lessons.length - 1]!)">Open my final build <span>→</span></button>
+  </section>
+
+  <section id="reference" class="reference-intro">
+    <p class="section-label">Keep this for later</p><h2>The complete language reference.</h2><p>You do not need to learn all 50 pieces now. Look one up when your project needs it.</p>
+  </section>
+  <nav class="category-nav" aria-label="Language element categories"><a href="#start-here">Start here</a>@for (category of categories; track category) { <a [href]="'#' + category.replaceAll(' ', '-').replaceAll('&', 'and')">{{ category }}</a> }<a href="#diagnostics">Errors & fixes</a></nav>
   <div class="reference">
     @for (category of categories; track category) {
       <section [id]="category.replaceAll(' ', '-').replaceAll('&', 'and')">
@@ -14,10 +87,11 @@
     }
   </div>
   <section id="diagnostics" class="diagnostic-reference">
-    <header><p>Teaching diagnostics</p><h2>Errors that explain themselves.</h2><span>Stable RW codes connect compiler feedback to practical repairs.</span></header>
+    <header><p>When something goes wrong</p><h2>Errors that explain themselves.</h2><span>Click a problem in Studio to see why it happened and a safe way to repair it.</span></header>
     <div class="diagnostic-grid">
       @for (item of diagnostics; track item.code) {
         <article [id]="'diagnostics-' + item.code.toLowerCase()"><code>{{ item.code }}</code><div><h3>{{ item.title }}</h3><p>{{ item.explanation }}</p><small><b>Try this:</b> {{ item.repair }}</small></div></article>
       }
     </div>
-  </section></main>
+  </section>
+</main>

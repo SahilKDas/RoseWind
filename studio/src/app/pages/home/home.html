@@ -1,61 +1,61 @@
 <main>
   <section class="hero">
     <div class="hero__copy">
-      <p class="eyebrow"><span></span> A language that grows with you</p>
-      <h1>Strong types.<br><em>Gentle learning curve.</em></h1>
-      <p class="lead">RoseWind combines familiar curly-brace syntax with explicit, readable object-oriented mechanics. Learn with useful compiler messages, then ship to the web.</p>
+      <p class="eyebrow"><span></span> Your first programming language</p>
+      <h1>Start with one line.<br><em>Build what you imagine.</em></h1>
+      <p class="lead">Never coded before? Perfect. RoseWind teaches you in tiny steps, explains mistakes in normal words, and lets you run everything right here in your browser.</p>
       <div class="hero__actions">
-        <a class="button button--primary" href="#start">Start coding</a>
-        <a class="button button--ghost" routerLink="/learn">Explore all 50 elements</a>
+        <a class="button button--primary" routerLink="/learn" fragment="start-here">Start lesson 1</a>
+        <a class="button button--ghost" href="#start">Open the playground</a>
       </div>
       <dl class="hero__stats">
-        <div><dt>50</dt><dd>core elements</dd></div>
-        <div><dt>100%</dt><dd>browser runnable</dd></div>
-        <div><dt>0</dt><dd>setup to learn</dd></div>
+        <div><dt>6</dt><dd>tiny first lessons</dd></div>
+        <div><dt>0</dt><dd>setup or experience</dd></div>
+        <div><dt>∞</dt><dd>things you can invent</dd></div>
       </dl>
     </div>
-    <div class="code-card" aria-label="RoseWind Pet class example">
-      <header><span class="dot dot--red"></span><span class="dot dot--gold"></span><span class="dot dot--green"></span><b>pet.rw</b><small>RoseWind</small></header>
-      <pre><code><span class="muted">/* A whitespace-independent class */</span>
-<span class="pink">class</span>(<span class="aqua">Pet</span>) {{ '{' }}
-  <span class="pink">pub</span>(name:<span class="aqua">text</span>);
-  <span class="pink">priv</span>(age:<span class="aqua">num</span>);
-
-  <span class="yellow">create</span>(name:<span class="aqua">text</span>, age:<span class="aqua">num</span>) {{ '{' }}
-    <span class="orange">self</span>.name = name;
-    <span class="orange">self</span>.age = age;
-  {{ '}' }}
-
-  <span class="pink">pub</span>(<span class="blue">speak</span>() <span class="pink">-&gt; void</span>) {{ '{' }}
-    <span class="blue">print</span>(<span class="green">"Hi, I am "</span> + <span class="orange">self</span>.name);
-  {{ '}' }}
-{{ '}' }}
-
-<span class="pink">let</span>(myDog:<span class="aqua">Pet</span> = <span class="pink">new</span>(<span class="aqua">Pet</span>, <span class="green">"Buddy"</span>, <span class="purple">3</span>));</code></pre>
-      <footer><span>✓ Types checked</span><span>⌘ Enter to run</span></footer>
+    <div class="code-card" aria-label="A first RoseWind program">
+      <header><span class="dot dot--red"></span><span class="dot dot--gold"></span><span class="dot dot--green"></span><b>hello.rw</b><small>Your first program</small></header>
+      <div class="code-note"><b>1</b><p>Tell the computer exactly what to show.</p></div>
+      <pre><code><span class="blue">print</span>(<span class="green">"Hello, world!"</span>);
+<span class="blue">print</span>(<span class="green">"I made this."</span>);</code></pre>
+      <div class="code-output"><small>OUTPUT</small><span>Hello, world!</span><span>I made this.</span></div>
+      <footer><span>✓ It worked</span><span>Now change the words and run again</span></footer>
     </div>
   </section>
 
+  <section class="path" aria-labelledby="path-title">
+    <header><p class="eyebrow">From zero to builder</p><h2 id="path-title">One new power at a time.</h2><p>Every lesson starts with working code. Change it, run it, and discover what your change did.</p></header>
+    <div class="path-grid">
+      <article><b>01</b><span class="path-icon">“ ”</span><h3>Make it talk</h3><p>Use <code>print</code> to see your first instruction come alive.</p></article>
+      <article><b>02</b><span class="path-icon">=</span><h3>Help it remember</h3><p>Give names to words and numbers so you can use them later.</p></article>
+      <article><b>03</b><span class="path-icon">?</span><h3>Let it choose</h3><p>Ask yes-or-no questions and make different things happen.</p></article>
+      <article><b>04+</b><span class="path-icon">⚡</span><h3>Build your idea</h3><p>Combine loops and objects into games, tools, and web projects.</p></article>
+    </div>
+    <a class="path-link" routerLink="/learn" fragment="start-here">See the whole beginner path <span>→</span></a>
+  </section>
+
   <section class="principles" aria-labelledby="principles-title">
-    <div class="section-heading"><p class="eyebrow">Designed for clarity</p><h2 id="principles-title">Serious foundations,<br>without the ceremony.</h2></div>
+    <div class="section-heading"><p class="eyebrow">Made for learning</p><h2 id="principles-title">The computer should explain itself.</h2></div>
     <div class="principle-grid">
-      <article><span class="icon">Aa</span><h3>Readable by default</h3><p>Explicit constructors, <code>self</code>, familiar punctuation, and a compact type vocabulary keep intent visible.</p></article>
-      <article><span class="icon">✓</span><h3>Helpful type safety</h3><p>Errors point to the source and explain the mismatch in beginner-friendly language before code runs.</p></article>
-      <article><span class="icon">⚡</span><h3>Built for the web</h3><p>Compile to modern JavaScript and work naturally with JSON, bytes, dates, IDs, fetch, and async delays.</p></article>
+      <article><span class="icon">Aa</span><h3>Words that mean what they say</h3><p><code>text</code> holds words, <code>num</code> holds numbers, and <code>self</code> means the object you are building.</p></article>
+      <article><span class="icon">?</span><h3>Errors with a “why”</h3><p>RoseWind points to the problem, explains it in plain language, and only suggests repairs that are safe.</p></article>
+      <article><span class="icon">▶</span><h3>One button to run</h3><p>No terminal and no setup. Press Run, see the output, change one thing, and try again.</p></article>
     </div>
   </section>
 
   <section class="start" id="start">
     <div>
-      <p class="eyebrow">Your workspace</p>
-      <h2>Ready when you are.</h2>
-      <p>Choose a display name. Your source stays in this browser and executes inside an isolated Web Worker.</p>
+      <p class="eyebrow">Your playground</p>
+      <h2>Make the computer say hello.</h2>
+      <p>Pick any display name. Studio will open with a two-line program that already works, so your first job is simply to press Run.</p>
     </div>
     <form (ngSubmit)="enterStudio()">
-      <label for="displayName">Display name</label>
-      <div class="input-row"><input id="displayName" name="displayName" [(ngModel)]="name" autocomplete="nickname" placeholder="Ada" /><button class="button button--primary" type="submit">Open RoseWind Studio <span>→</span></button></div>
+      @if (readyLesson) { <p class="lesson-ready" role="status"><b>Lesson {{ readyLesson }} is ready.</b> Pick a name and we will open the exact code you chose.</p> }
+      <label for="displayName">What should we call you?</label>
+      <div class="input-row"><input id="displayName" name="displayName" [(ngModel)]="name" autocomplete="nickname" placeholder="Your name or nickname" aria-describedby="name-help" /><button class="button button--primary" type="submit">Start coding <span>→</span></button></div>
       @if (loginError) { <p class="form-error" role="alert">{{ loginError }}</p> }
-      <small>No password or account is required for this local-first preview.</small>
+      <small id="name-help">No password, download, or account. Your work stays in this browser.</small>
     </form>
   </section>
 </main>

@@ -5,6 +5,7 @@ RoseWind is a beginner-friendly, strongly typed language designed for JIT-orient
 This repository contains:
 
 - an Angular 22 web studio with a browser-native IDE workbench;
+- a server-rendered six-lesson course for children and complete beginners, starting with two print statements;
 - request-time server rendering for public, indexable pages;
 - a guarded, client-rendered editor for signed-in humans;
 - a lexer, parser, type checker, JavaScript emitter, fixed-point decimal runtime, and Web Worker runner;

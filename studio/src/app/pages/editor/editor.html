@@ -3,6 +3,7 @@
     <div class="traffic" aria-hidden="true"><i></i><i></i><i></i></div>
     <div class="workspace-title"><img src="/rosewind.svg" alt="" /><span>ROSEWIND</span><b>{{ fileName() }}</b><small>&mdash; {{ result().ok ? 'compiled' : 'needs attention' }}</small></div>
     <div class="studio-actions">
+      <a class="lesson-link" href="/learn#start-here">Lessons</a>
       <button class="text-button" title="Format document (Shift+Alt+F)" (click)="formatDocument()">Format</button>
       <button class="text-button" title="Minify RoseWind (Shift+Alt+M)" (click)="minifyDocument()">Minify</button>
       <button class="toggle-button" [class.active]="formatOnSave()" [attr.aria-pressed]="formatOnSave()" title="Toggle format on save" (click)="toggleFormatOnSave()"><i></i>On save</button>
@@ -23,9 +24,11 @@
     </aside>
     <aside class="explorer">
       <header><span>Project</span><button title="Download current file" (click)="download()">↓</button></header>
-      <div class="folder"><b><span>⌄</span> ROSEWIND STARTER</b>
+      <div class="folder"><b><span>⌄</span> LEARN BY BUILDING</b>
         @for (example of examples; track example.file) {
-          <button [class.selected]="fileName() === example.file" (click)="loadExample(example)"><img class="file-icon" src="/rosewind.svg" alt="" />{{ example.file }}<small>{{ example.name }}</small></button>
+          <button [class.selected]="fileName() === example.file" (click)="loadExample(example)">
+            <span class="lesson-number">{{ example.stage }}</span><strong>{{ example.name }}</strong><small>{{ example.description }}</small>
+          </button>
         }
       </div>
       <section class="outline">
@@ -38,7 +41,7 @@
           }
         }
       </section>
-      <section class="editor-help"><b>Code help</b><p>Hover for explanations</p><p><kbd>F12</kbd> go to definition</p><p><kbd>Shift Alt F</kbd> format</p><p><kbd>Shift Alt M</kbd> minify</p></section>
+      <section class="editor-help"><b>Need a hand?</b><p class="next-step">@if (currentExample(); as example) { Step {{ example.stage }}: {{ example.description }} } @else { Press Run, then change one thing. }</p><a href="/learn#start-here">Open the beginner guide →</a><p>Hover code for explanations</p><p><kbd>Ctrl Enter</kbd> run your program</p></section>
     </aside>
 
     <section class="editor-area">
@@ -46,7 +49,7 @@
         <button [class.active]="activeView() === 'source'" (click)="showView('source')"><img src="/rosewind.svg" alt="" />{{ fileName() }}<i></i></button>
         <button [class.active]="activeView() === 'javascript'" (click)="showView('javascript')"><span class="js">JS</span>transpiled.js</button>
       </nav>
-      <div class="breadcrumb"><span>rosewind-starter</span><b>&rsaquo;</b><span>src</span><b>&rsaquo;</b><span>{{ activeView() === 'source' ? fileName() : 'transpiled.js' }}</span><i></i><small>Ctrl+click a name to open its definition</small></div>
+      <div class="breadcrumb"><span>my-first-project</span><b>&rsaquo;</b><span>{{ activeView() === 'source' ? fileName() : 'transpiled.js' }}</span><i></i><small>@if (currentExample(); as example) { {{ example.description }} } @else { Change one thing, then press Run }</small></div>
 
       <div class="editor-stack">
         <div class="source-wrap" [class.hidden]="activeView() !== 'source'">

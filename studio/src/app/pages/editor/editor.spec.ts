@@ -16,8 +16,9 @@ describe('RoseWind Studio editor', () => {
     const fixture = await createEditor();
     const element = fixture.nativeElement as HTMLElement;
     expect(element.querySelector('.cm-editor')).not.toBeNull();
-    expect(element.querySelector('.cm-content')?.textContent).toContain('class(Pet)');
-    expect(element.querySelector('.outline')?.textContent).toContain('Pet');
+    expect(element.querySelector('.cm-content')?.textContent).toContain('Hello, world!');
+    expect(element.querySelector('.folder')?.textContent).toContain('01Hello, computer');
+    expect(element.querySelector('.editor-help')?.textContent).toContain('Step 01');
     expect(element.querySelector('.text-button')?.textContent).toContain('Format');
     fixture.destroy();
   });
