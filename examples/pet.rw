@@ -1,17 +1,17 @@
-/* RoseWind v0.2: whitespace is optional outside literals and comments. */
+/* RoseWind v0.3: whitespace is cosmetic outside literals and block comments. */
 class(Pet) {
-    pub(name:text);
-    priv(age:num);
+    name: text;
+    priv(age: num);
 
-    create(name:text, age:num) {
+    create(name: text, age: num) {
         self.name = name;
         self.age = age;
     }
 
-    pub(speak()->void) {
+    speak() {
         print("Hi, I am " + self.name + "!");
     }
 }
 
-let(myDog:Pet = new(Pet, "Buddy", 3));
+let(myDog = new(Pet, "Buddy", 3));
 myDog.speak();

@@ -24,9 +24,9 @@ print("I wrote my first program.");
     number: 2,
     title: 'Give information a name',
     idea: 'A variable is a labeled box where the computer remembers a value.',
-    explanation: 'let creates the box. name is its label, text says what belongs inside, and = puts the first value into it.',
-    code: `let(name:text = "Sky");
-let(points:num = 7);
+    explanation: 'let creates the box and = puts its first value inside. RoseWind learns the type from that value, then prevents accidental type changes.',
+    code: `let(name = "Sky");
+let(points = 7);
 
 print("Hello, " + name + "!");
 print("Points: " + str(points));
@@ -39,7 +39,7 @@ print("Points: " + str(points));
     title: 'Let the program decide',
     idea: 'A condition is a yes-or-no question the computer can answer.',
     explanation: 'if runs the first block when its question is true. Otherwise, else runs the other block. The braces group each possible path.',
-    code: `let(coins:num = 12);
+    code: `let(coins = 12);
 
 if(coins >= 10) {
     print("You can buy the cape!");
@@ -70,18 +70,18 @@ print("Blast off!");
     idea: 'A class is a recipe for creating objects that keep data and know how to act.',
     explanation: 'Pet is the recipe. create fills in a new pet, self means this pet, and speak is an action every Pet can perform.',
     code: `class(Pet) {
-    pub(name:text);
+    name: text;
 
     create(name:text) {
         self.name = name;
     }
 
-    pub(speak()->void) {
+    speak() {
         print("Hi, I am " + self.name + "!");
     }
 }
 
-let(myPet:Pet = new(Pet, "Pixel"));
+let(myPet = new(Pet, "Pixel"));
 myPet.speak();
 `,
     result: ['Hi, I am Pixel!'],
@@ -92,8 +92,8 @@ myPet.speak();
     title: 'Build something that is yours',
     idea: 'Real programs combine small ideas. You already know enough to invent one.',
     explanation: 'This tiny game remembers a hero, repeats three turns, makes a choice, and reports the ending. Read it one block at a time.',
-    code: `let(hero:text = "Nova");
-let(score:num = 0);
+    code: `let(hero = "Nova");
+let(score = 0);
 
 loop(turn:range(1, 4)) {
     score = score + turn;

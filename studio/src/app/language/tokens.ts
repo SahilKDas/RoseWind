@@ -5,14 +5,14 @@ export type TokenKind =
   | 'duration'
   | 'regex'
   | 'eof'
-  | 'class' | 'self' | 'create' | 'extends' | 'new' | 'pub' | 'priv' | 'super'
-  | 'if' | 'else' | 'loop' | 'in' | 'return' | 'break' | 'continue'
+  | 'class' | 'self' | 'create' | 'new' | 'pub' | 'priv' | 'super'
+  | 'if' | 'else' | 'loop' | 'return' | 'break' | 'continue'
   | 'match' | 'case' | 'default' | 'try' | 'catch' | 'let' | 'true' | 'false' | 'null'
   | 'text' | 'num' | 'bool' | 'list' | 'dict' | 'void' | 'any' | 'date'
   | 'time' | 'bytes' | 'decimal' | 'id' | 'set'
   | '{' | '}' | '(' | ')' | '[' | ']' | ';' | ':' | ',' | '.' | '?'
   | '+' | '-' | '*' | '/' | '%' | '!' | '=' | '<' | '>'
-  | '==' | '!=' | '<=' | '>=' | '&&' | '||' | '->' | '=>';
+  | '==' | '!=' | '<=' | '>=' | '&&' | '||' | '->';
 
 export interface SourceSpan {
   readonly start: number;
@@ -34,8 +34,8 @@ export interface Diagnostic extends SourceSpan {
 }
 
 const keywords = new Set<TokenKind>([
-  'class', 'self', 'create', 'extends', 'new', 'pub', 'priv', 'super',
-  'if', 'else', 'loop', 'in', 'return', 'break', 'continue', 'match',
+  'class', 'self', 'create', 'new', 'pub', 'priv', 'super',
+  'if', 'else', 'loop', 'return', 'break', 'continue', 'match',
   'case', 'default', 'try', 'catch', 'let', 'true', 'false', 'null',
   'text', 'num', 'bool', 'list', 'dict', 'void', 'any', 'date', 'time',
   'bytes', 'decimal', 'id', 'set',
@@ -43,7 +43,7 @@ const keywords = new Set<TokenKind>([
 
 const twoCharacterTokens: Readonly<Record<string, TokenKind>> = {
   '==': '==', '!=': '!=', '<=': '<=', '>=': '>=', '&&': '&&',
-  '||': '||', '->': '->', '=>': '=>',
+  '||': '||', '->': '->',
 };
 
 const singleCharacterTokens = new Set<TokenKind>([

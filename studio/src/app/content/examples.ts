@@ -17,8 +17,8 @@ print("I made this with RoseWind.");
   {
     name: 'Names & values', file: 'variables.rw', stage: '02',
     description: 'Teach the computer to remember',
-    source: `let(name:text = "River");
-let(age:num = 10);
+    source: `let(name = "River");
+let(age = 10);
 
 print("Hi, " + name + "!");
 print("Next year you will be " + str(age + 1) + ".");
@@ -27,7 +27,7 @@ print("Next year you will be " + str(age + 1) + ".");
   {
     name: 'Make a choice', file: 'choices.rw', stage: '03',
     description: 'Run code only when something is true',
-    source: `let(score:num = 8);
+    source: `let(score = 8);
 
 if(score >= 10) {
     print("You unlocked the next level!");
@@ -51,27 +51,27 @@ print("Blast off!");
     description: 'Combine data and actions into your own object',
     source: `/* You are ready for classes! */
 class(Pet) {
-    pub(name:text);
-    priv(age:num);
+    name: text;
+    priv(age: num);
 
     create(name:text, age:num) {
         self.name = name;
         self.age = age;
     }
 
-    pub(speak()->void) {
+    speak() {
         print("Hi, I am " + self.name + "!");
     }
 }
 
-let(myDog:Pet = new(Pet, "Buddy", 3));
+let(myDog = new(Pet, "Buddy", 3));
 myDog.speak();
 `,
   },
   {
     name: 'Patterns', file: 'patterns.rw', stage: '06',
     description: 'Handle several possible answers clearly',
-    source: `let(total:num = 0);
+    source: `let(total = 0);
 
 loop(item:range(1, 6)) {
     total = total + item;
@@ -90,14 +90,14 @@ match(total) {
   {
     name: 'Web data', file: 'data.rw', stage: '07',
     description: 'Work with lists, records, and JSON',
-    source: `let(tags:set<text> = set(["typed", "web", "friendly"]));
-let(payload:dict<text, any> = {
+    source: `let(tags = set(["typed", "web", "friendly"]));
+let(payload = {
     name: "RoseWind",
     stable: true,
     score: 1
 });
 
-let(encoded:text = toJSON(payload));
+let(encoded = toJSON(payload));
 print(encoded);
 print("Unique tags: " + str(len(tags)));
 print("Run id: " + str(id()));

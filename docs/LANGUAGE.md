@@ -1,43 +1,59 @@
 # RoseWind language guide
 
-## v0.2: whitespace-independent source
+## v0.3: start simple, stay strongly typed
 
-RoseWind v0.2 ignores every whitespace character outside string, regex, and comment literals. Punctuation separates declarations, so readable and minified programs have the same syntax tree and behavior. Even `l e t(score:num=42);` is valid and normalizes to `let(score:num=42);`.
+RoseWind ignores every whitespace character outside text, regex, and block-comment literals. Spaces, tabs, and newlines are decoration: readable and minified programs produce the same syntax tree and behavior. Even `l e t(score=42);` is valid and normalizes to `let(score=42);`.
+
+Start with inferred variables:
 
 ```rosewind
-let(score:num = 42);
+let(name = "River");
+let(score = 42);
+let(values = [1, 2, 3]);
+```
+
+RoseWind learns each variable's type from its first value and still prevents unsafe changes. Add an explicit type when the value does not make the intent clear or when a nullable/collection contract matters:
+
+```rosewind
 let(nickname:text? = null);
 let(values:list<num> = [1, 2, 3]);
 let(record:dict<text, any> = { name: "RoseWind", stable: true });
-let(tags:set<text> = set(["typed", "friendly"]));
 ```
 
-Primitive types are `text`, `num`, `bool`, `void`, and `any`. Web data types are `date`, `time`, `bytes`, `decimal`, `id`, `set<T>`, and `regex`. A trailing `?` makes any type nullable.
-
-Duration literals support `ms`, `s`, `m`, `h`, and `d`. Regex literals use `r"pattern"`. Whitespace inside `"text"`, `'text'`, `r"regex"`, and `/* block comments */` is preserved.
+Primitive types are `text`, `num`, `bool`, `void`, and `any`. Web data types are `date`, `time`, `bytes`, `decimal`, `id`, `set<T>`, and `regex`. A trailing `?` makes a type nullable. Duration literals support `ms`, `s`, `m`, `h`, and `d`; regex literals use `r"pattern"`.
 
 ## Classes
 
+A field or method is public by default. Use `priv(...)` only for details that the object should keep to itself. Methods that return nothing do not need `->void`.
+
 ```rosewind
 class(Pet) {
-    pub(name:text);
-    priv(age:num);
+    name: text;
+    priv(age: num);
 
-    create(name:text, age:num) {
+    create(name: text, age: num) {
         self.name = name;
         self.age = age;
     }
 
-    pub(speak()->void) {
-        print("Hi, I am " + self.name);
+    speak() {
+        print("Hi, I am " + self.name + "!");
     }
 }
 
-let(pet:Pet = new(Pet, "Buddy", 3));
+let(pet = new(Pet, "Buddy", 3));
 pet.speak();
 ```
 
-Inheritance uses `class(Child:Parent)`. Classes support `super`, public and private members, name-first typed parameters, and typed returns.
+`create` is the explicit constructor and `self` means the current object, keeping RoseWind's Python-inspired object model visible. Inheritance uses `class(Child:Parent)`, and parent behavior is available through `super`. For methods that return a value, write an explicit result type:
+
+```rosewind
+score()->num {
+    return(10);
+}
+```
+
+The older explicit wrappers, such as `pub(name:type);`, remain valid v0.2 source, but new code normally uses the shorter public-by-default form.
 
 ## Control flow
 
@@ -59,29 +75,33 @@ try {
 }
 ```
 
-`if`, `loop`, and `match` headers require parentheses. Iteration uses `loop(item:iterable)`. Returns use `return(value);` or `return();`.
+`if`, `loop`, and `match` headers always use parentheses. Iteration uses `loop(item:values)`. Returns use `return(value);` or `return();`.
 
-## Comments and migration
+## Comments
 
-v0.2 uses punctuation-delimited `/* ... */` comments. The v0.1 `//` form is deprecated because its meaning depends on a newline. RoseWind Studio accepts v0.1 during the compatibility release, shows migration hints, and provides **Convert document to v0.2**. Formatting a legacy document also emits readable v0.2 source.
+Comments use punctuation-delimited `/* ... */`. RoseWind does not accept line comments because their ending would make a newline meaningful. Whitespace inside `"text"`, `'text'`, `r"regex"`, and `/* block comments */` is preserved.
+
+## Compilation and running
+
+RoseWind parses and type-checks the program first, then emits JavaScript for just-in-time execution in the browser worker or command-line runner. A type error stops execution before unsafe JavaScript is produced.
 
 ## Standard library
 
 | Function | Result |
 | --- | --- |
-| `print(...values)` | Writes to the studio or CLI output |
-| `input(prompt)` | Asynchronous text input (empty in the non-interactive CLI) |
-| `len(value)` | Collection, dictionary, or text length |
-| `range(start, end, step)` | Number list |
-| `str(value)`, `num(value)` | Safe primitive casts |
-| `toJSON(value)`, `parseJSON(text)` | JSON conversion |
-| `wait(duration)` | Non-blocking delay |
-| `web.fetch(...)` | Fetch API access |
-| `math.random()` | Random number in [0, 1) |
-| `typeOf(value)` | Runtime type name |
+| `print(...values)` | Writes to the Studio or CLI output |
+| `input(prompt)` | Reads text input |
+| `len(value)` | Counts text or collection items |
+| `range(start, end, step)` | Creates a number list |
+| `str(value)`, `num(value)` | Performs safe primitive casts |
+| `toJSON(value)`, `parseJSON(text)` | Converts JSON data |
+| `wait(duration)` | Pauses without blocking |
+| `web.fetch(...)` | Makes a web request |
+| `math.random()` | Returns a random number in [0, 1) |
+| `typeOf(value)` | Returns the runtime type name |
 
 Typed constructors include `date()`, `bytes()`, `decimal()`, `id()`, and `set()`.
 
 ## Grammar summary
 
-Statements end with semicolons and blocks use braces. Declarations use `class(Name)`, `let(name:type=value);`, `pub(name:type);`, and `pub(method(parameters)->type)`. Match arms use `case(value) { ... }` and `default { ... }`. Use the Studio’s **Minify** command to verify that optional whitespace does not affect compilation.
+Statements end with semicolons and blocks use braces. The main declaration forms are `class(Name)`, `let(name=value);`, `name:type;`, `method(parameters) { ... }`, and `priv(member)`. Object creation uses `new(Class, arguments)`. Match arms use `case(value) { ... }` and `default { ... }`. Use Studio's **Minify** command to see that whitespace does not affect compilation.

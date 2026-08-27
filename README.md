@@ -1,6 +1,6 @@
 # RoseWind
 
-RoseWind is a beginner-friendly, strongly typed language designed for JIT-oriented JavaScript compilation and web targets. It combines familiar braces, parentheses, and semicolons with explicit object mechanics such as `self` and `create`. Its punctuation-first v0.2 grammar ignores whitespace outside literals and comments, while one compatibility release continues to accept v0.1 source.
+RoseWind is a beginner-friendly, strongly typed language designed for JIT-oriented JavaScript compilation and web targets. Its v0.3 grammar keeps whitespace entirely cosmetic, infers obvious variable types, makes class members public by default, and preserves Python-inspired object mechanics through `self` and explicit `create` constructors.
 
 This repository contains:
 

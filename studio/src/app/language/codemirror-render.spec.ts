@@ -22,7 +22,7 @@ describe('RoseWind editor integration', () => {
     const view = new EditorView({
       parent,
       state: EditorState.create({
-        doc: 'let score: num = 42;',
+        doc: 'let(score=42);',
         extensions: [
           basicSetup,
           roseWindLanguage,
@@ -35,7 +35,7 @@ describe('RoseWind editor integration', () => {
     });
 
     expect(parent.querySelector('.cm-editor')).not.toBeNull();
-    expect(parent.querySelector('.cm-content')?.textContent).toContain('let score');
+    expect(parent.querySelector('.cm-content')?.textContent).toContain('let(score');
     expect(parent.querySelector('.cm-gutter-lint')).not.toBeNull();
     view.destroy();
     parent.remove();
@@ -72,7 +72,7 @@ describe('RoseWind editor integration', () => {
   });
 
   it('navigates to definitions and formats through editor commands', () => {
-    const source = 'class Pet {\ncreate() {\n}\npub speak() -> void {\n}\n}\nlet pet: Pet = new Pet();\npet.speak();';
+    const source = 'class(Pet){\ncreate(){\n}\nspeak(){\n}\n}\nlet(pet=new(Pet));\npet.speak();';
     const use = source.lastIndexOf('speak');
     const parent = document.createElement('div');
     document.body.append(parent);

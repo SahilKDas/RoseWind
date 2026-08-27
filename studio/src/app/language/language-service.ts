@@ -10,7 +10,6 @@ import {
 } from './ast';
 import { compile, CompileResult } from './compiler';
 import { Diagnostic, SourceSpan } from './tokens';
-import { convertToV02 } from './migration';
 import { WhitespaceNormalizer } from './whitespace-normalizer';
 
 export interface TextRange {
@@ -103,7 +102,6 @@ interface SymbolEntry {
 const keywordDescriptions: Readonly<Record<string, string>> = {
   class: 'Declares a reusable object blueprint with fields and methods.',
   create: 'Declares the constructor that initializes a new class instance.',
-  extends: 'Makes a class inherit accessible behavior from another class.',
   new: 'Creates an instance and calls its create constructor.',
   pub: 'Allows a class member to be used outside its class.',
   priv: 'Restricts a class member to code inside its class.',
@@ -113,7 +111,6 @@ const keywordDescriptions: Readonly<Record<string, string>> = {
   if: 'Runs a block only when its condition is true.',
   else: 'Runs an alternative block when an if condition is false.',
   loop: 'Repeats a block over values, while a condition is true, or forever.',
-  in: 'Connects a loop variable to the values it iterates over.',
   return: 'Leaves a method and optionally returns a typed value.',
   break: 'Stops the nearest loop.',
   continue: 'Skips directly to the next loop iteration.',
@@ -131,9 +128,9 @@ const keywordSignatures: Readonly<Record<string, string>> = {
   class: 'class(Name[:Parent]) { ... }',
   create: 'create(name:type, ...) { ... }',
   new: 'new(Class, ...arguments)',
-  pub: 'pub(name:type); or pub(method(...)->type)',
+  pub: 'Members are public by default; pub(name:type) is also accepted.',
   priv: 'priv(name:type); or priv(method(...)->type)',
-  let: 'let(name:type=value);',
+  let: 'let(name=value); or let(name:type=value);',
   if: 'if(condition) { ... }',
   loop: 'loop(item:values) { ... }',
   return: 'return(value);',
@@ -191,16 +188,10 @@ const diagnosticExplanations: Readonly<Record<string, { explanation: string; cau
   RW1001: { explanation: 'A block comment began with /* but never reached */.', cause: 'Add the closing */ after the comment text.' },
   RW1002: { explanation: 'A quoted value reaches the end of the file before its closing quote.', cause: 'A matching quote is probably missing.' },
   RW1003: { explanation: 'Duration values only accept ms, s, m, h, or d units.', cause: 'The suffix after the number is not a supported time unit.' },
-  RW2101: { explanation: 'Whitespace-independent class headers put the name inside punctuation.', cause: 'This file still uses the v0.1 class header.' },
-  RW2109: { explanation: 'Line comments depend on a newline, so v0.2 uses block comments instead.', cause: 'Convert // text to /* text */.' },
-  RW2110: { explanation: 'Whitespace-independent variable declarations are wrapped in let(...).', cause: 'This file still uses the v0.1 variable form.' },
-  RW2111: { explanation: 'v0.2 fields put the name before a colon and wrap the declaration.', cause: 'This field uses the v0.1 type-name order.' },
-  RW2112: { explanation: 'v0.2 wraps a public or private method signature in parentheses.', cause: 'This method uses the v0.1 signature form.' },
-  RW2113: { explanation: 'v0.2 puts the class and constructor arguments inside new(...).', cause: 'This constructor call uses the v0.1 form.' },
-  RW2114: { explanation: 'v0.2 loop headers are parenthesized and use a colon for iteration.', cause: 'This loop uses the v0.1 in separator.' },
-  RW2115: { explanation: 'v0.2 wraps return values in parentheses.', cause: 'This return uses the v0.1 form.' },
-  RW2116: { explanation: 'v0.2 match cases wrap their value and no longer need =>.', cause: 'This case uses the v0.1 form.' },
-  RW2117: { explanation: 'v0.2 always wraps if and match conditions in parentheses.', cause: 'This condition uses the v0.1 form.' },
+  RW2201: { explanation: 'Class names live inside parentheses so spaces can never change the program.', cause: 'Write class(Name), not the removed v0.1 form class Name.' },
+  RW2205: { explanation: 'Variable declarations use let(...) so whitespace remains purely cosmetic.', cause: 'Write let(name=value) or let(name:type=value).' },
+  RW2209: { explanation: 'Line comments need a newline, but RoseWind ignores all whitespace.', cause: 'Use the punctuation-delimited form /* comment */.' },
+  RW2212: { explanation: 'Object creation keeps the class name inside new(...).', cause: 'Write new(Class, arguments).' },
   RW2007: { explanation: 'Fields are declarations, so they must end with a semicolon.', cause: 'The semicolon after the field was omitted.' },
   RW2014: { explanation: 'Variable declarations must end with a semicolon.', cause: 'The semicolon after the variable was omitted.' },
   RW2016: { explanation: 'Standalone expressions and calls must end with a semicolon.', cause: 'The semicolon after the expression was omitted.' },
@@ -223,7 +214,7 @@ const semicolonCodes = new Set(['RW2007', 'RW2014', 'RW2016', 'RW2022', 'RW2023'
 export class RoseWindLanguageService {
   analyze(source: string): LanguageAnalysis {
     try {
-      const result = compile(source, { migrationHints: true });
+      const result = compile(source);
       const symbols = collectDocumentSymbols(source, result.program);
       const diagnostics = result.diagnostics.map((item) => this.enrichDiagnostic(source, item, symbols));
       return { result, diagnostics, symbols };
@@ -299,15 +290,6 @@ export class RoseWindLanguageService {
 
   codeActions(source: string, diagnostic: Diagnostic, symbols = this.symbols(source)): readonly CodeAction[] {
     const actions: CodeAction[] = [];
-    if (diagnostic.code.startsWith('RW21')) {
-      const edits = this.convertDocumentToV02(source);
-      if (edits.length) {
-        actions.push({
-          id: `${diagnostic.code}.convert-document-v02`, title: 'Convert document to v0.2',
-          kind: 'format', diagnosticCode: diagnostic.code, edits, preferred: true,
-        });
-      }
-    }
     if (semicolonCodes.has(diagnostic.code)) {
       const position = Math.min(diagnostic.start, source.length);
       if (source[position - 1] !== ';' && source[position] !== ';') {
@@ -337,7 +319,7 @@ export class RoseWindLanguageService {
 
   format(source: string, range?: TextRange): readonly TextEdit[] {
     if (!range && compile(source).ok) {
-      const formattedDocument = prettyPrintV02(source);
+      const formattedDocument = prettyPrintRoseWind(source);
       return source === formattedDocument ? [] : [{ from: 0, to: source.length, insert: formattedDocument }];
     }
     const target = range ? expandToFullLines(source, range) : { from: 0, to: source.length };
@@ -348,14 +330,8 @@ export class RoseWindLanguageService {
     return original === formatted ? [] : [{ ...target, insert: formatted }];
   }
 
-  convertDocumentToV02(source: string): readonly TextEdit[] {
-    const converted = compile(source).ok ? prettyPrintV02(source) : formatLines(convertToV02(source), 0, false);
-    return converted === source ? [] : [{ from: 0, to: source.length, insert: converted }];
-  }
-
   minify(source: string): readonly TextEdit[] {
-    const converted = convertToV02(source);
-    const minified = new WhitespaceNormalizer().normalize(converted).source;
+    const minified = new WhitespaceNormalizer().normalize(source).source;
     return minified === source ? [] : [{ from: 0, to: source.length, insert: minified }];
   }
 
@@ -432,7 +408,7 @@ function classSymbol(source: string, declaration: ClassDeclaration): DocumentSym
   for (const member of declaration.members) {
     if (member.kind === 'FieldDeclaration') {
       children.push({
-        name: member.name, kind: 'field', detail: `${member.access} ${displayType(member.type)} ${member.name}`,
+        name: member.name, kind: 'field', detail: member.access === 'priv' ? `priv(${member.name}:${displayType(member.type)})` : `${member.name}: ${displayType(member.type)}`,
         range: toRange(member), selectionRange: nameRange(source, member, member.name), children: [],
         containerName: declaration.name, visibility: member.access, type: displayType(member.type),
       });
@@ -458,13 +434,20 @@ function methodSymbol(source: string, method: MethodDeclaration, className: stri
   const args = method.parameters.map((parameter) => `${parameter.name}: ${displayType(parameter.type)}`).join(', ');
   return {
     name: method.name, kind: method.constructor ? 'constructor' : 'method',
-    detail: method.constructor ? `create(${args})` : `${method.access}(${method.name}(${args})->${displayType(method.returnType)})`,
+    detail: method.constructor ? `create(${args})` : methodSignature(method, args),
     range: toRange(method), selectionRange: nameRange(source, method, method.name),
     children: [...parameters, ...locals], containerName: className, visibility: method.access,
     type: displayType(method.returnType),
   };
 }
 
+function methodSignature(method: MethodDeclaration, args: string): string {
+  const result = method.returnType.name === 'void' && !method.returnType.nullable
+    ? ''
+    : `->${displayType(method.returnType)}`;
+  const signature = `${method.name}(${args})${result}`;
+  return method.access === 'priv' ? `priv(${signature})` : signature;
+}
 function collectStatementSymbols(source: string, statement: Statement, containerName: string, scope: TextRange): DocumentSymbol[] {
   const result: DocumentSymbol[] = [];
   const visit = (item: Statement, activeScope: TextRange): void => {
@@ -671,8 +654,8 @@ function deduplicateCompletions(items: readonly CompletionSuggestion[]): readonl
   return [...found.values()].sort((left, right) => right.boost - left.boost || left.label.localeCompare(right.label));
 }
 
-function prettyPrintV02(source: string): string {
-  const compact = new WhitespaceNormalizer().normalize(convertToV02(source)).source;
+function prettyPrintRoseWind(source: string): string {
+  const compact = new WhitespaceNormalizer().normalize(source).source;
   let output = '';
   let indent = 0;
   let index = 0;

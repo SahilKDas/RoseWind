@@ -22,8 +22,8 @@ interface RoseWindState {
 }
 
 const keywords = new Set([
-  'class', 'create', 'extends', 'new', 'pub', 'priv', 'self', 'super', 'if',
-  'else', 'loop', 'in', 'return', 'break', 'continue', 'match', 'case',
+  'class', 'create', 'new', 'pub', 'priv', 'self', 'super', 'if',
+  'else', 'loop', 'return', 'break', 'continue', 'match', 'case',
   'default', 'try', 'catch', 'let',
 ]);
 
@@ -49,13 +49,12 @@ export const roseWindLanguage = StreamLanguage.define<RoseWindState>({
     }
 
     if (stream.eatSpace()) return null;
-    if (stream.match('//')) { stream.skipToEnd(); return 'comment'; }
     if (stream.match('/*')) { state.blockComment = true; return 'comment'; }
     if (stream.match(/r"(?:[^"\\]|\\.)*"/)) return 'regexp';
     if (stream.match(/"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'/)) return 'string';
     if (stream.match(/\d+(?:\.\d+)?(?:ms|s|m|h|d)\b/)) return 'number unit';
     if (stream.match(/\d+(?:\.\d+)?\b/)) return 'number';
-    if (stream.match(/->|=>|==|!=|<=|>=|&&|\|\||[+\-*\/%=<>!]/)) return 'operator';
+    if (stream.match(/->|==|!=|<=|>=|&&|\|\||[+\-*\/%=<>!]/)) return 'operator';
     if (stream.match(/[{}()[\],;:.?]/)) return 'punctuation';
 
     const identifier = stream.match(/[A-Za-z_][A-Za-z0-9_]*/);
@@ -95,11 +94,11 @@ export const roseWindHighlighting = syntaxHighlighting(HighlightStyle.define([
 ]));
 
 const snippetCompletions: readonly Completion[] = [
-  snippetCompletion('class(${name}) {\n    pub(name:text);\n\n    create(name:text) {\n        self.name = name;\n    }\n}', {
-    label: 'class…', detail: 'Create a v0.2 class', type: 'snippet', boost: 10,
+  snippetCompletion('class(${name}) {\n    value: text;\n\n    create(value: text) {\n        self.value = value;\n    }\n}', {
+    label: 'class…', detail: 'Create a beginner-friendly class', type: 'snippet', boost: 10,
   }),
-  snippetCompletion('pub(${name}(${parameters})->${void}) {\n    /* body */\n}', {
-    label: 'method…', detail: 'Create a typed v0.2 method', type: 'snippet', boost: 10,
+  snippetCompletion('${name}(${parameters}) {\n    /* body */\n}', {
+    label: 'method…', detail: 'Create a public method', type: 'snippet', boost: 10,
   }),
   snippetCompletion('loop(${item}:${range(0, 10)}) {\n    /* body */\n}', {
     label: 'loop…', detail: 'Iterate over values', type: 'snippet', boost: 10,

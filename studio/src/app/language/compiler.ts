@@ -4,7 +4,6 @@ import { Lexer } from './tokens';
 import { Parser } from './parser';
 import { Diagnostic } from './tokens';
 import { TypeChecker } from './type-checker';
-import { legacyGrammarDiagnostics, usesLegacyGrammar } from './migration';
 import { WhitespaceNormalizer } from './whitespace-normalizer';
 
 export interface CompileResult {
@@ -14,20 +13,12 @@ export interface CompileResult {
   readonly program: Program;
 }
 
-export interface CompileOptions {
-  readonly migrationHints?: boolean;
-}
-
-export function compile(source: string, options: CompileOptions = {}): CompileResult {
+export function compile(source: string): CompileResult {
   const normalized = new WhitespaceNormalizer().normalize(source);
-  const legacy = usesLegacyGrammar(source);
-  const lexed = legacy
-    ? new Lexer(source).scan()
-    : new Lexer(normalized.source, normalized).scan();
+  const lexed = new Lexer(normalized.source, normalized).scan();
   const parsed = new Parser(lexed.tokens).parse();
   const diagnostics = [
-    ...(options.migrationHints ? normalized.diagnostics : []),
-    ...(options.migrationHints && legacy ? legacyGrammarDiagnostics(source) : []),
+    ...normalized.diagnostics,
     ...lexed.diagnostics,
     ...parsed.diagnostics,
   ];

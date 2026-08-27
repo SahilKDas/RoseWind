@@ -26,7 +26,7 @@ describe('RoseWind Studio editor', () => {
   it('navigates from a problem, explains it, previews its fix, and applies it', async () => {
     const fixture = await createEditor();
     const component = fixture.componentInstance as any;
-    component.setEditorSource('let score: num = 42');
+    component.setEditorSource('let(score=42)');
     component.bottomPanel.set('diagnostics');
     fixture.detectChanges();
 
@@ -42,7 +42,7 @@ describe('RoseWind Studio editor', () => {
 
     (element.querySelector('.apply-fix') as HTMLButtonElement).click();
     fixture.detectChanges();
-    expect(component.source()).toBe('let score: num = 42;');
+    expect(component.source()).toBe('let(score=42);');
     expect(component.result().ok).toBe(true);
     fixture.destroy();
   });
@@ -50,7 +50,7 @@ describe('RoseWind Studio editor', () => {
   it('formats before saving when format-on-save is enabled', async () => {
     const fixture = await createEditor();
     const component = fixture.componentInstance as any;
-    component.setEditorSource('class Demo {\ncreate() {\nprint("ok");\n}\n}\n');
+    component.setEditorSource('class(Demo){\ncreate(){\nprint("ok");\n}\n}\n');
     if (!component.formatOnSave()) component.toggleFormatOnSave();
     component.save();
     fixture.detectChanges();

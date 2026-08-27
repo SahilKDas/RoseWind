@@ -5,7 +5,6 @@ export interface NormalizedSource {
   readonly original: string;
   readonly offsets: readonly number[];
   readonly diagnostics: readonly Diagnostic[];
-  readonly legacyLineComments: boolean;
 }
 
 /** Removes whitespace outside literals/comments while retaining an exact source map. */
@@ -15,7 +14,6 @@ export class WhitespaceNormalizer {
     const offsets: number[] = [];
     const diagnostics: Diagnostic[] = [];
     let index = 0;
-    let legacyLineComments = false;
 
     const append = (position: number): void => {
       output.push(original[position]!);
@@ -38,10 +36,7 @@ export class WhitespaceNormalizer {
         continue;
       }
 
-      // Kept only for the v0.1 compatibility release. The terminating newline is
-      // retained so the legacy lexer cannot consume the following statement.
       if (character === '/' && next === '/') {
-        legacyLineComments = true;
         const start = index;
         while (index < original.length && original[index] !== '\n' && original[index] !== '\r') append(index++);
         if (index < original.length) {
@@ -50,15 +45,15 @@ export class WhitespaceNormalizer {
         }
         const location = locate(original, start);
         diagnostics.push({
-          severity: 'warning', code: 'RW2109',
-          message: 'Line comments are deprecated; use /* comment */ so whitespace can remain optional.',
+          severity: 'error', code: 'RW2209',
+          message: 'RoseWind does not use // comments. Use /* comment */ instead.',
           start, end: index, ...location,
         });
         continue;
       }
 
       const regexLiteral = character === 'r' && next === '"';
-      if (character === '"' || character === '\'' || regexLiteral) {
+      if (character === '"' || character === "'" || regexLiteral) {
         if (regexLiteral) append(index++);
         const quote = original[index]!;
         append(index++);
@@ -75,7 +70,7 @@ export class WhitespaceNormalizer {
     }
 
     offsets.push(original.length);
-    return { source: output.join(''), original, offsets, diagnostics, legacyLineComments };
+    return { source: output.join(''), original, offsets, diagnostics };
   }
 }
 

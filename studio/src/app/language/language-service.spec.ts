@@ -1,22 +1,22 @@
 import { describe, expect, it } from 'vitest';
 import { RoseWindLanguageService } from './language-service';
 
-const petProgram = `class Pet {
-    pub text name;
-    priv num age;
+const petProgram = `class(Pet) {
+    name: text;
+    priv(age: num);
 
-    create(text name, num age) {
+    create(name: text, age: num) {
         self.name = name;
         self.age = age;
     }
 
-    pub speak() -> void {
-        let greeting: text = "Hello";
+    speak() {
+        let(greeting = "Hello");
         print(greeting + self.name);
     }
 }
 
-let myDog: Pet = new Pet("Buddy", 3);
+let(myDog = new(Pet, "Buddy", 3));
 myDog.speak();
 `;
 
@@ -39,7 +39,8 @@ describe('RoseWind language service', () => {
     const fieldUse = petProgram.lastIndexOf('self.name') + 'self.'.length + 1;
     const fieldHover = service.hover(petProgram, fieldUse);
     expect(fieldHover?.kind).toBe('field');
-    expect(fieldHover?.signature).toContain('text name');
+    expect(fieldHover?.signature).toContain('name');
+    expect(fieldHover?.signature).toContain('text');
   });
 
   it('resolves method uses to their definitions', () => {
@@ -62,18 +63,18 @@ describe('RoseWind language service', () => {
   });
 
   it('provides and applies a missing-semicolon quick fix', () => {
-    const source = 'let score: num = 42';
+    const source = 'let(score=42)';
     const analysis = service.analyze(source);
     const diagnostic = analysis.diagnostics.find((item) => item.code === 'RW2014')!;
     expect(diagnostic.explanation).toContain('semicolon');
     expect(diagnostic.documentationKey).toBe('diagnostics.rw2014');
     const fixed = service.applyEdits(source, diagnostic.actions[0]!.edits);
-    expect(fixed).toBe('let score: num = 42;');
+    expect(fixed).toBe('let(score=42);');
     expect(service.analyze(fixed).result.ok).toBe(true);
   });
 
   it('offers an unambiguous spelling repair for an unknown name', () => {
-    const source = 'let score: num = 42; print(scroe);';
+    const source = 'let(score=42);print(scroe);';
     const diagnostic = service.analyze(source).diagnostics.find((item) => item.code === 'RW3006')!;
     expect(diagnostic.actions[0]?.title).toContain('score');
     const fixed = service.applyEdits(source, diagnostic.actions[0]!.edits);
@@ -82,14 +83,14 @@ describe('RoseWind language service', () => {
   });
 
   it('formats documents idempotently while ignoring braces in text', () => {
-    const source = 'class Demo {\ncreate() {\nprint("{");\n}\n}\n';
+    const source = 'class(Demo){create(){print("{");}}';
     const first = service.applyEdits(source, service.format(source));
     expect(first).toBe('class(Demo) {\n    create() {\n        print("{");\n    }\n}\n');
     expect(service.format(first)).toEqual([]);
   });
 
   it('recovers safely from malformed and partially typed source', () => {
-    const samples = ['', 'class', 'class Pet { pub', 'let value:', 'match (value) { case'];
+    const samples = ['', 'class', 'class(Pet', 'class(Pet){priv', 'let(value:', 'match(value){case'];
     for (const source of samples) {
       expect(() => service.analyze(source)).not.toThrow();
       expect(() => service.completions(source, source.length)).not.toThrow();
