@@ -1,3 +1,4 @@
 User-agent: *
-Allow: /
-Disallow: /editor
+Allow: /RoseWind/
+Disallow: /RoseWind/editor
+Sitemap: https://sahilkdas.github.io/RoseWind/sitemap.xml

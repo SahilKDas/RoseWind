@@ -1,5 +1,5 @@
 <header class="site-header">
-  <a class="brand" routerLink="/" aria-label="RoseWind home"><img src="/rosewind.svg" alt="" /><b>RoseWind</b><small>language</small></a>
+  <a class="brand" routerLink="/" aria-label="RoseWind home"><img src="rosewind.svg" alt="" /><b>RoseWind</b><small>language</small></a>
   <nav aria-label="Primary navigation"><a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Overview</a><a routerLink="/learn" routerLinkActive="active">Learn</a><a href="https://github.com/SahilKDas/RoseWind" rel="external">GitHub</a></nav>
   <div class="account">
     @if (auth.user()) { <a routerLink="/editor" class="studio-link">Studio</a><button (click)="logout()" title="Sign out">{{ auth.user()?.slice(0, 1)?.toUpperCase() }}</button> }

@@ -30,9 +30,7 @@
                 "input": "public"
               }
             ],
-            "styles": [
-              "src/styles.scss"
-            ],
+            "styles": ["src/styles.scss"],
             "server": "src/main.server.ts",
             "outputMode": "server",
             "security": {
@@ -62,6 +60,12 @@
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true
+            },
+            "pages": {
+              "server": "src/main.pages.server.ts",
+              "outputMode": "static",
+              "outputPath": "dist/pages",
+              "baseHref": "/RoseWind/"
             }
           },
           "defaultConfiguration": "production"

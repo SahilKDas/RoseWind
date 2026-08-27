@@ -1,9 +1,9 @@
 <main class="studio teaching-studio">
   <header class="studio-bar">
     <div class="traffic" aria-hidden="true"><i></i><i></i><i></i></div>
-    <div class="workspace-title"><img src="/rosewind.svg" alt="" /><span>ROSEWIND</span><b>{{ fileName() }}</b><small>&mdash; {{ result().ok ? 'compiled' : 'needs attention' }}</small></div>
+    <div class="workspace-title"><img src="rosewind.svg" alt="" /><span>ROSEWIND</span><b>{{ fileName() }}</b><small>&mdash; {{ result().ok ? 'compiled' : 'needs attention' }}</small></div>
     <div class="studio-actions">
-      <a class="lesson-link" href="/learn#start-here">Lessons</a>
+      <a class="lesson-link" href="learn#start-here">Lessons</a>
       <button class="text-button" title="Format document (Shift+Alt+F)" (click)="formatDocument()">Format</button>
       <button class="text-button" title="Minify RoseWind (Shift+Alt+M)" (click)="minifyDocument()">Minify</button>
       <button class="toggle-button" [class.active]="formatOnSave()" [attr.aria-pressed]="formatOnSave()" title="Toggle format on save" (click)="toggleFormatOnSave()"><i></i>On save</button>
@@ -41,12 +41,12 @@
           }
         }
       </section>
-      <section class="editor-help"><b>Need a hand?</b><p class="next-step">@if (currentExample(); as example) { Step {{ example.stage }}: {{ example.description }} } @else { Press Run, then change one thing. }</p><a href="/learn#start-here">Open the beginner guide →</a><p>Hover code for explanations</p><p><kbd>Ctrl Enter</kbd> run your program</p></section>
+      <section class="editor-help"><b>Need a hand?</b><p class="next-step">@if (currentExample(); as example) { Step {{ example.stage }}: {{ example.description }} } @else { Press Run, then change one thing. }</p><a href="learn#start-here">Open the beginner guide →</a><p>Hover code for explanations</p><p><kbd>Ctrl Enter</kbd> run your program</p></section>
     </aside>
 
     <section class="editor-area">
       <nav class="tabs">
-        <button [class.active]="activeView() === 'source'" (click)="showView('source')"><img src="/rosewind.svg" alt="" />{{ fileName() }}<i></i></button>
+        <button [class.active]="activeView() === 'source'" (click)="showView('source')"><img src="rosewind.svg" alt="" />{{ fileName() }}<i></i></button>
         <button [class.active]="activeView() === 'javascript'" (click)="showView('javascript')"><span class="js">JS</span>transpiled.js</button>
       </nav>
       <div class="breadcrumb"><span>my-first-project</span><b>&rsaquo;</b><span>{{ activeView() === 'source' ? fileName() : 'transpiled.js' }}</span><i></i><small>@if (currentExample(); as example) { {{ example.description }} } @else { Change one thing, then press Run }</small></div>

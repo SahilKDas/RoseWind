@@ -20,6 +20,11 @@ npm start
 ```
 
 Open <http://localhost:4200>. Enter a display name on the landing page to unlock the client-only editor. This preview is local-first: the display name and saved source remain in browser storage.
+## Publish the open-source site with GitHub Pages
+
+The repository includes `.github/workflows/pages.yml`. Every push to `main` tests RoseWind, prerenders the public homepage and learning guide, builds the client-only Studio under `/RoseWind/`, and deploys the result to `https://sahilkdas.github.io/RoseWind/`.
+
+In **Repository Settings → Pages**, choose **GitHub Actions** as the publishing source once. Future pushes to `main` deploy automatically. The normal `npm run build` output remains request-time SSR; `npm run build:pages` creates the static Pages artifact in `studio/dist/pages/browser`.
 
 ## Run RoseWind from the command line
 

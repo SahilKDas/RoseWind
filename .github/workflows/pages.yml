@@ -1,0 +1,70 @@
+name: Deploy GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out RoseWind
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: studio/package-lock.json
+
+      - name: Install dependencies
+        working-directory: studio
+        run: npm ci
+
+      - name: Test RoseWind
+        working-directory: studio
+        run: npm test -- --watch=false
+
+      - name: Build crawler-ready GitHub Pages site
+        working-directory: studio
+        run: npm run build:pages
+
+      - name: Add Pages deep-link fallbacks
+        shell: bash
+        run: |
+          mkdir -p studio/dist/pages/browser/editor
+          cp studio/dist/pages/browser/index.csr.html studio/dist/pages/browser/editor/index.html
+          cp studio/dist/pages/browser/index.csr.html studio/dist/pages/browser/404.html
+          sed -i 's|</head>|<meta name="robots" content="noindex, nofollow, noarchive"></head>|' studio/dist/pages/browser/editor/index.html
+          sed -i 's|</head>|<meta name="robots" content="noindex, nofollow, noarchive"></head>|' studio/dist/pages/browser/404.html
+          touch studio/dist/pages/browser/.nojekyll
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: studio/dist/pages/browser
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4

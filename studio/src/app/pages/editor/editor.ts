@@ -13,7 +13,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { Title } from '@angular/platform-browser';
+import { Meta, Title } from '@angular/platform-browser';
 import { AuthService } from '../../core/auth.service';
 import { CodeExample, examples } from '../../content/examples';
 import {
@@ -80,6 +80,7 @@ export class Editor implements OnDestroy {
 
   constructor() {
     inject(Title).setTitle('RoseWind Studio');
+    inject(Meta).updateTag({ name: 'robots', content: 'noindex, nofollow, noarchive' });
     const saved = this.readStorage(sourceStorageKey);
     const savedFileName = this.readStorage(fileNameStorageKey);
     if (saved) this.updateSource(saved);
